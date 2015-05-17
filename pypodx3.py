@@ -24,6 +24,7 @@ USAGE:
 import sys, time, math, array, struct, string
 import usb
 import struct
+import threading
 
 def formathex(buffer):
     """ return buffer content as hex formatted bytes """
@@ -196,10 +197,64 @@ class POD():
         d = self.readData(4, 0x80d0)
         print "POD Serial: %d" % (struct.unpack('<I', ''.join([chr(i) for i in d])))
 
+class PacketCompleter(threading.Thread):
+    MAX_DELAY = 0.1
+
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.lock = threading.Lock()
+        self.curData = []
+        self.lastTime = None
+
+    def run(self):
+        while True:
+            self.lock.acquire()
+            if self.curData == []:
+                self.lock.release()
+                time.sleep(0.1)
+                continue
+
+            if self.lastTime + PacketCompleter.MAX_DELAY < time.time():
+                self.packetComplete()
+
+            self.lock.release()
+
+    def appendData(self, data):
+        self.lock.acquire()
+        if data[2] == 0x01:
+            if self.curData != []:
+                self.packetComplete()
+                self.curData = []
+        elif data[2] == 0x04:
+            if self.curData == []:
+                print("ERROR: Continuing data, but no previous packet stored?!")
+
+        # print "++ ", formathex(data)
+        self.curData += data[4:]
+        self.lastTime = time.time()
+        self.lock.release()
+
+    def packetComplete(self):
+        data = self.curData
+        self.curData = []
+        self.lastTime = None
+
+        print formathex(data)
+
 pod = POD()
 pod.open()
 pod.init()
 pod.get_serial_number2()
+pc = PacketCompleter()
+pc.start()
+
+while True:
+    try:
+        resp = pod.handle.bulkRead(0x1, 0x40)
+        pc.appendData(resp)
+    except:
+        pass
+
 #pod.setparam(5, 10)
 #pod.setguitarmic()
 pod.close()
