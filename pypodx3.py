@@ -25,6 +25,7 @@ import sys, time, math, array, struct, string
 import usb
 import struct
 import threading
+import signal
 
 def formathex(buffer):
     """ return buffer content as hex formatted bytes """
@@ -142,18 +143,15 @@ class POD():
         print "claim interface 0x1"
         self.handle.claimInterface(1)
 
-        #data = [0x0C, 0x00, 0x01, 0x00, 0x02, 0x00, 0x02, 0x40, 0x02, 0xF0, 0x01, 0x00, 0x00, 0x00, 0x00, 0xFF]
-        data = [0x0C, 0x00, 0x01, 0x00, 0x02, 0x00, 0x02, 0x40, 0x02, 0xEE, 0x01, 0x00, 0x00, 0x00, 0x00, 0xFF]
-        print "write 0x10 bytes to ep 0x01"
-        resp = self.handle.bulkWrite(0x01, data)
-        print "resp", resp
+        ##data = [0x0C, 0x00, 0x01, 0x00, 0x02, 0x00, 0x02, 0x40, 0x02, 0xF0, 0x01, 0x00, 0x00, 0x00, 0x00, 0xFF]
+        #data = [0x0C, 0x00, 0x01, 0x00, 0x02, 0x00, 0x02, 0x40, 0x02, 0xEE, 0x01, 0x00, 0x00, 0x00, 0x00, 0xFF]
+        #print "write 0x10 bytes to ep 0x01"
+        #resp = self.handle.bulkWrite(0x01, data)
+        #print "resp", resp
         
-        print "read 0x40 bytes from ep0x81"
-        # looks like [len ?? flag ??] + len * bytes
-        # flag ==0x01: first packet
-        # flag ==0x04: continuation of previous?
-        resp = self.handle.bulkRead(0x1, 0x40)
-        print "resp", formathex(resp)
+        #print "read 0x40 bytes from ep0x81"
+        #resp = self.handle.bulkRead(0x1, 0x40)
+        #print "resp", formathex(resp)
 
     def close(self):  
         """ Release device interface """
@@ -205,9 +203,10 @@ class PacketCompleter(threading.Thread):
         self.lock = threading.Lock()
         self.curData = []
         self.lastTime = None
+        self.stop = False
 
     def run(self):
-        while True:
+        while not self.stop:
             self.lock.acquire()
             if self.curData == []:
                 self.lock.release()
@@ -220,6 +219,9 @@ class PacketCompleter(threading.Thread):
             self.lock.release()
 
     def appendData(self, data):
+        ## looks like [len ?? flag ??] + len * bytes
+        ## flag ==0x01: first packet
+        ## flag ==0x04: continuation of previous?
         self.lock.acquire()
         if data[2] == 0x01:
             if self.curData != []:
@@ -248,12 +250,20 @@ pod.get_serial_number2()
 pc = PacketCompleter()
 pc.start()
 
-while True:
+run = True
+def signal_handler(signal, frame):
+    global run
+    run = False
+signal.signal(signal.SIGINT, signal_handler)
+
+while run:
     try:
         resp = pod.handle.bulkRead(0x1, 0x40)
         pc.appendData(resp)
     except:
         pass
+
+pc.stop = True
 
 #pod.setparam(5, 10)
 #pod.setguitarmic()
