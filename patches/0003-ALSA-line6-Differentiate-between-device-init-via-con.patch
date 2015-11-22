@@ -1,0 +1,172 @@
+From 5fd7cd2ff18d1ce63c3cbee78fecf54fc6121e12 Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Sat, 21 Nov 2015 22:03:15 +0100
+Subject: [PATCH 3/6] ALSA: line6: Differentiate between device init (via
+ control EP) and MIDI data transfer (via interrupt endpoints).
+
+POD X3 can initialize similarly to older PODs, but it doesn't have the MIDI interface. Instead,
+data configuration is done via proprietary bulk EP messages.
+---
+ sound/usb/line6/driver.c | 10 +++++-----
+ sound/usb/line6/driver.h |  6 ++++--
+ sound/usb/line6/pod.c    |  9 ++++++++-
+ sound/usb/line6/variax.c |  6 ++++--
+ 4 files changed, 21 insertions(+), 10 deletions(-)
+
+diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
+index efeb16a8..5fd6cad 100644
+--- a/sound/usb/line6/driver.c
++++ b/sound/usb/line6/driver.c
+@@ -482,7 +482,7 @@ static void line6_get_interval(struct usb_line6 *line6)
+ 	}
+ }
+ 
+-static int line6_init_cap_control(struct usb_line6 *line6)
++static int line6_init_cap_control_midi(struct usb_line6 *line6)
+ {
+ 	int ret;
+ 
+@@ -572,8 +572,8 @@ int line6_probe(struct usb_interface *interface,
+ 
+ 	line6_get_interval(line6);
+ 
+-	if (properties->capabilities & LINE6_CAP_CONTROL) {
+-		ret = line6_init_cap_control(line6);
++	if (properties->capabilities & LINE6_CAP_CONTROL_MIDI) {
++		ret = line6_init_cap_control_midi(line6);
+ 		if (ret < 0)
+ 			goto error;
+ 	}
+@@ -643,7 +643,7 @@ int line6_suspend(struct usb_interface *interface, pm_message_t message)
+ 
+ 	snd_power_change_state(line6->card, SNDRV_CTL_POWER_D3hot);
+ 
+-	if (line6->properties->capabilities & LINE6_CAP_CONTROL)
++	if (line6->properties->capabilities & LINE6_CAP_CONTROL_MIDI)
+ 		line6_stop_listen(line6);
+ 
+ 	if (line6pcm != NULL) {
+@@ -662,7 +662,7 @@ int line6_resume(struct usb_interface *interface)
+ {
+ 	struct usb_line6 *line6 = usb_get_intfdata(interface);
+ 
+-	if (line6->properties->capabilities & LINE6_CAP_CONTROL)
++	if (line6->properties->capabilities & LINE6_CAP_CONTROL_MIDI)
+ 		line6_start_listen(line6);
+ 
+ 	snd_power_change_state(line6->card, SNDRV_CTL_POWER_D0);
+diff --git a/sound/usb/line6/driver.h b/sound/usb/line6/driver.h
+index 0f0c45a..2551cb5 100644
+--- a/sound/usb/line6/driver.h
++++ b/sound/usb/line6/driver.h
+@@ -102,6 +102,8 @@ enum {
+ 	LINE6_CAP_PCM =		1 << 1,
+ 	/* device supports hardware monitoring */
+ 	LINE6_CAP_HWMON =	1 << 2,
++	/* device uses raw MIDI via USB (data endpoints) */
++	LINE6_CAP_CONTROL_MIDI = 1 << 3,
+ 	/* device requires output data when input is read */
+ 	LINE6_CAP_IN_NEEDS_OUT = 1 << 4,
+ };
+@@ -141,10 +143,10 @@ struct usb_line6 {
+ 	/* Line 6 MIDI device data structure */
+ 	struct snd_line6_midi *line6midi;
+ 
+-	/* URB for listening to PODxt Pro control endpoint */
++	/* URB for listening to POD data endpoint */
+ 	struct urb *urb_listen;
+ 
+-	/* Buffer for listening to PODxt Pro control endpoint */
++	/* Buffer for listening to POD data endpoint */
+ 	unsigned char *buffer_listen;
+ 
+ 	/* Buffer for message to be processed */
+diff --git a/sound/usb/line6/pod.c b/sound/usb/line6/pod.c
+index 31e5864..78642e7 100644
+--- a/sound/usb/line6/pod.c
++++ b/sound/usb/line6/pod.c
+@@ -475,6 +475,7 @@ static const struct line6_properties pod_properties_table[] = {
+ 		.id = "BassPODxt",
+ 		.name = "BassPODxt",
+ 		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_CONTROL_MIDI
+ 				| LINE6_CAP_PCM
+ 				| LINE6_CAP_HWMON,
+ 		.altsetting = 5,
+@@ -487,6 +488,7 @@ static const struct line6_properties pod_properties_table[] = {
+ 		.id = "BassPODxtLive",
+ 		.name = "BassPODxt Live",
+ 		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_CONTROL_MIDI
+ 				| LINE6_CAP_PCM
+ 				| LINE6_CAP_HWMON,
+ 		.altsetting = 1,
+@@ -499,6 +501,7 @@ static const struct line6_properties pod_properties_table[] = {
+ 		.id = "BassPODxtPro",
+ 		.name = "BassPODxt Pro",
+ 		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_CONTROL_MIDI
+ 				| LINE6_CAP_PCM
+ 				| LINE6_CAP_HWMON,
+ 		.altsetting = 5,
+@@ -510,7 +513,8 @@ static const struct line6_properties pod_properties_table[] = {
+ 	[LINE6_POCKETPOD] = {
+ 		.id = "PocketPOD",
+ 		.name = "Pocket POD",
+-		.capabilities	= LINE6_CAP_CONTROL,
++		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_CONTROL_MIDI,
+ 		.altsetting = 0,
+ 		.ep_ctrl_r = 0x82,
+ 		.ep_ctrl_w = 0x02,
+@@ -520,6 +524,7 @@ static const struct line6_properties pod_properties_table[] = {
+ 		.id = "PODxt",
+ 		.name = "PODxt",
+ 		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_CONTROL_MIDI
+ 				| LINE6_CAP_PCM
+ 				| LINE6_CAP_HWMON,
+ 		.altsetting = 5,
+@@ -532,6 +537,7 @@ static const struct line6_properties pod_properties_table[] = {
+ 		.id = "PODxtLive",
+ 		.name = "PODxt Live",
+ 		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_CONTROL_MIDI
+ 				| LINE6_CAP_PCM
+ 				| LINE6_CAP_HWMON,
+ 		.altsetting = 1,
+@@ -544,6 +550,7 @@ static const struct line6_properties pod_properties_table[] = {
+ 		.id = "PODxtPro",
+ 		.name = "PODxt Pro",
+ 		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_CONTROL_MIDI
+ 				| LINE6_CAP_PCM
+ 				| LINE6_CAP_HWMON,
+ 		.altsetting = 5,
+diff --git a/sound/usb/line6/variax.c b/sound/usb/line6/variax.c
+index ddc23dd..0c4512d 100644
+--- a/sound/usb/line6/variax.c
++++ b/sound/usb/line6/variax.c
+@@ -259,7 +259,8 @@ static const struct line6_properties variax_properties_table[] = {
+ 	[LINE6_PODXTLIVE_VARIAX] = {
+ 		.id = "PODxtLive",
+ 		.name = "PODxt Live",
+-		.capabilities	= LINE6_CAP_CONTROL,
++		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_CONTROL_MIDI,
+ 		.altsetting = 1,
+ 		.ep_ctrl_r = 0x86,
+ 		.ep_ctrl_w = 0x05,
+@@ -269,7 +270,8 @@ static const struct line6_properties variax_properties_table[] = {
+ 	[LINE6_VARIAX] = {
+ 		.id = "Variax",
+ 		.name = "Variax Workbench",
+-		.capabilities	= LINE6_CAP_CONTROL,
++		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_CONTROL_MIDI,
+ 		.altsetting = 1,
+ 		.ep_ctrl_r = 0x82,
+ 		.ep_ctrl_w = 0x01,
+-- 
+1.9.1
+

@@ -1,0 +1,116 @@
+From 91be82782f754882fac4b407363b9097d4613acf Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Sun, 22 Nov 2015 16:51:45 +0100
+Subject: [PATCH 5/6] ALSA: line6: Use device_create_file instead of
+ snd_card_add_dev_attr.
+
+The latter seems to create invalid configuration, the device pointer passed to the attr
+callbacks is not correct afterwards (results into segfaults when accessing the attributes).
+---
+ sound/usb/line6/podhd.c | 59 +++++++++++++++++++++++++++++++++++--------------
+ 1 file changed, 43 insertions(+), 16 deletions(-)
+
+diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
+index d698344..7852b93 100644
+--- a/sound/usb/line6/podhd.c
++++ b/sound/usb/line6/podhd.c
+@@ -57,6 +57,9 @@ struct usb_line6_podhd {
+ 
+ 	/* Firmware version */
+ 	int firmware_version;
++
++	/* Flag whether the sysfs files were created */
++	int devfiles_created;
+ };
+ 
+ static struct snd_ratden podhd_ratden = {
+@@ -176,16 +179,37 @@ static ssize_t firmware_version_show(struct device *dev,
+ static DEVICE_ATTR_RO(firmware_version);
+ static DEVICE_ATTR_RO(serial_number);
+ 
+-static struct attribute *podhd_dev_attrs[] = {
+-	&dev_attr_firmware_version.attr,
+-	&dev_attr_serial_number.attr,
+-	NULL
+-};
++/*
++ *       Create sysfs entries.
++ */
++static int podhd_create_attrs(struct device *dev)
++{
++	int err;
++	struct usb_interface *interface = to_usb_interface(dev);
++	struct usb_line6_podhd *pod = usb_get_intfdata(interface);
+ 
+-static const struct attribute_group podhd_dev_attr_group = {
+-	.name = "podhd",
+-	.attrs = podhd_dev_attrs,
+-};
++	err = device_create_file(dev, &dev_attr_firmware_version);
++	if (err < 0)
++		return err;
++	err = device_create_file(dev, &dev_attr_serial_number);
++	if (err < 0)
++		return err;
++
++	pod->devfiles_created = 1;
++	return 0;
++}
++
++static void podhd_remove_attrs(struct device *dev)
++{
++	struct usb_interface *interface = to_usb_interface(dev);
++	struct usb_line6_podhd *pod = usb_get_intfdata(interface);
++
++	if (pod->devfiles_created) {
++		device_remove_file(dev, &dev_attr_firmware_version);
++		device_remove_file(dev, &dev_attr_serial_number);
++		pod->devfiles_created = 0;
++	}
++}
+ 
+ /*
+  * POD X3 startup procedure.
+@@ -279,6 +303,13 @@ static int podhd_startup_finalize(struct usb_line6_podhd *pod)
+ {
+ 	struct usb_line6 *line6 = &pod->line6;
+ 
++	if (pod->line6.properties->capabilities & LINE6_CAP_CONTROL) {
++		/* create sysfs entries: */
++		int err = podhd_create_attrs(line6->ifcdev);
++		if (err < 0)
++			return err;
++	}
++
+ 	/* ALSA audio interface: */
+ 	return snd_card_register(line6->card);
+ }
+@@ -286,8 +317,11 @@ static int podhd_startup_finalize(struct usb_line6_podhd *pod)
+ static void podhd_disconnect(struct usb_line6 *line6)
+ {
+ 	struct usb_line6_podhd *pod = (struct usb_line6_podhd *)line6;
++	struct device *dev = line6->ifcdev;
+ 
+ 	if (pod->line6.properties->capabilities & LINE6_CAP_CONTROL) {
++		podhd_remove_attrs(dev);
++
+ 		del_timer_sync(&pod->startup_timer);
+ 		cancel_work_sync(&pod->startup_work);
+ 	}
+@@ -304,13 +338,6 @@ static int podhd_init(struct usb_line6 *line6,
+ 
+ 	line6->disconnect = podhd_disconnect;
+ 
+-	if (pod->line6.properties->capabilities & LINE6_CAP_CONTROL) {
+-		/* create sysfs entries: */
+-		err = snd_card_add_dev_attr(line6->card, &podhd_dev_attr_group);
+-		if (err < 0)
+-			return err;
+-	}
+-
+ 	/* initialize MIDI subsystem: */
+ 	err = line6_init_midi(line6);
+ 	if (err < 0)
+-- 
+1.9.1
+

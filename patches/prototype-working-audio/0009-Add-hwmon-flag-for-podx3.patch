@@ -1,0 +1,25 @@
+From cc6505e057f7f3bdf84cbf7ad1d941b0b049bd31 Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Sun, 15 Nov 2015 19:00:55 +0100
+Subject: [PATCH 09/14] Add hwmon flag for podx3
+
+---
+ sound/usb/line6/podhd.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
+index 3434470..97fed88 100644
+--- a/sound/usb/line6/podhd.c
++++ b/sound/usb/line6/podhd.c
+@@ -417,7 +417,7 @@ static const struct line6_properties podhd_properties_table[] = {
+ 		.id = "PODX3",
+ 		.name = "POD X3",
+ 		.capabilities	= LINE6_CAP_CONTROL
+-				| LINE6_CAP_PCM,
++				| LINE6_CAP_PCM | LINE6_CAP_HWMON,
+ 		.altsetting = 1,
+ 		.ep_ctrl_r = 0x81,
+ 		.ep_ctrl_w = 0x01,
+-- 
+1.9.1
+

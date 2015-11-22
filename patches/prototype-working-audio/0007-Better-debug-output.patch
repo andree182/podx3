@@ -1,0 +1,45 @@
+From 20bbbd1c2d3a92d2e17f76849a72d4dd3767dbf9 Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Wed, 20 May 2015 20:00:29 +0200
+Subject: [PATCH 07/14] Better debug output
+
+---
+ sound/usb/line6/podhd.c | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
+index cdc9260..3434470 100644
+--- a/sound/usb/line6/podhd.c
++++ b/sound/usb/line6/podhd.c
+@@ -174,13 +174,25 @@ static int podhd_startup_finalize(struct usb_line6_podhd *pod);
+ static void line6_podhd_process_message(struct usb_line6 *line6)
+ {
+ 	struct usb_line6_podhd *pod = (struct usb_line6_podhd *) line6;
+-	const unsigned char *buf = pod->line6.buffer_message;
++	struct usb_line6_podhd_message *msg = (struct usb_line6_podhd_message*)pod->line6.buffer_message;
+ 	int len = pod->line6.message_length;
+ 
+-	if (len <= 0)
++	if ((len != msg->packet_data_len + 4) ||
++		((msg->flags != PODHD_MSG_FLAG_FIRST) &&
++		(msg->flags != PODHD_MSG_FLAG_FOLLOWUP)))
++	{
++		dev_err(pod->line6.ifcdev, "Unknown message format!");
+ 		return;
++	}
+ 
+-	printk("l6urb: %d:%02x %02x %02x %02x\n", len, buf[0], buf[1], buf[2], buf[3]);
++	if (msg->flags == PODHD_MSG_FLAG_FIRST)
++		printk("l6 msg: %02x %02x %02x %02x\n",
++			msg->packet_data[0], msg->packet_data[1], msg->packet_data[2], msg->packet_data[3]
++		);
++	else
++		printk("l6 msg+:...%02x %02x %02x %02x\n",
++			msg->packet_data[0], msg->packet_data[1], msg->packet_data[2], msg->packet_data[3]
++		);
+ }
+ 
+ /*
+-- 
+1.9.1
+

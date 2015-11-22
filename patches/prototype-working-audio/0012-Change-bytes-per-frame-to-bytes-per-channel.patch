@@ -1,0 +1,206 @@
+From 7d292de2b7bfce80dac2f9ac2f9022a9698a5eb5 Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Tue, 17 Nov 2015 17:28:40 +0100
+Subject: [PATCH 12/14] Change bytes-per-frame to bytes-per-channel.
+
+Channel count may be different for in/out (Pod X3 - 2 vs. 8), prev_fsize then contains
+useless number.
+---
+ sound/usb/line6/capture.c  |  8 ++++++--
+ sound/usb/line6/driver.c   |  1 +
+ sound/usb/line6/pcm.c      |  2 +-
+ sound/usb/line6/pcm.h      |  4 ++--
+ sound/usb/line6/playback.c | 14 +++++++++++---
+ sound/usb/line6/pod.c      |  4 ++--
+ sound/usb/line6/podhd.c    |  4 ++--
+ sound/usb/line6/toneport.c |  2 +-
+ 8 files changed, 26 insertions(+), 13 deletions(-)
+
+diff --git a/sound/usb/line6/capture.c b/sound/usb/line6/capture.c
+index 4160271..c64a863 100644
+--- a/sound/usb/line6/capture.c
++++ b/sound/usb/line6/capture.c
+@@ -90,7 +90,9 @@ void line6_capture_copy(struct snd_line6_pcm *line6pcm, char *fbuf, int fsize)
+ 	struct snd_pcm_substream *substream =
+ 	    get_substream(line6pcm, SNDRV_PCM_STREAM_CAPTURE);
+ 	struct snd_pcm_runtime *runtime = substream->runtime;
+-	const int bytes_per_frame = line6pcm->properties->bytes_per_frame;
++	const int bytes_per_frame =
++		line6pcm->properties->bytes_per_channel *
++		line6pcm->properties->capture_hw.channels_max;
+ 	int frames = fsize / bytes_per_frame;
+ 
+ 	if (runtime == NULL)
+@@ -185,7 +187,9 @@ static void audio_in_callback(struct urb *urb)
+ # error "The following assumes LINE6_ISO_PACKETS == 1"
+ #endif
+ 		line6pcm->prev_fbuf = fbuf;
+-		line6pcm->prev_fsize = fsize;
++		line6pcm->prev_fsize = fsize /
++			(line6pcm->properties->bytes_per_channel *
++			line6pcm->properties->capture_hw.channels_max);
+ 
+ 		if (!test_bit(LINE6_STREAM_IMPULSE, &line6pcm->in.running) &&
+ 		    test_bit(LINE6_STREAM_PCM, &line6pcm->in.running) &&
+diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
+index 4293216..1e7194d 100644
+--- a/sound/usb/line6/driver.c
++++ b/sound/usb/line6/driver.c
+@@ -591,6 +591,7 @@ int line6_probe(struct usb_interface *interface,
+ 	/* query interface number */
+ 	interface_number = interface->cur_altsetting->desc.bInterfaceNumber;
+ 
++	/* TODO occupies the bus without actual transfer happening? */
+ 	ret = usb_set_interface(usbdev, interface_number,
+ 				properties->altsetting);
+ 	if (ret < 0) {
+diff --git a/sound/usb/line6/pcm.c b/sound/usb/line6/pcm.c
+index ded39b3..d60acc3 100644
+--- a/sound/usb/line6/pcm.c
++++ b/sound/usb/line6/pcm.c
+@@ -290,7 +290,7 @@ int line6_pcm_acquire(struct snd_line6_pcm *line6pcm, int type)
+ 	struct line6_pcm_stream *pstr;
+ 	int ret = 0, dir;
+ 
+-	/* TODO: We should assert SNDRV_PCM_STREAM_PLAYBACK/CAPTURE values */
++	/* TODO: We should assert SNDRV_PCM_STREAM_PLAYBACK/CAPTURE == 0/1 */
+ 	mutex_lock(&line6pcm->state_mutex);
+ 	for (dir = 0; dir < 2; dir++) {
+ 		pstr = get_stream(line6pcm, dir);
+diff --git a/sound/usb/line6/pcm.h b/sound/usb/line6/pcm.h
+index 5c1df43..58d36f9 100644
+--- a/sound/usb/line6/pcm.h
++++ b/sound/usb/line6/pcm.h
+@@ -83,7 +83,7 @@ enum {
+ struct line6_pcm_properties {
+ 	struct snd_pcm_hardware playback_hw, capture_hw;
+ 	struct snd_pcm_hw_constraint_ratdens rates;
+-	int bytes_per_frame;
++	int bytes_per_channel;
+ };
+ 
+ struct line6_pcm_stream {
+@@ -155,7 +155,7 @@ struct snd_line6_pcm {
+ 	/* Previously captured frame (for software monitoring) */
+ 	unsigned char *prev_fbuf;
+ 
+-	/* Size of previously captured frame (for software monitoring) */
++	/* Size of previously captured frame (for software monitoring/sync) */
+ 	int prev_fsize;
+ 
+ 	/* Maximum size of USB packet */
+diff --git a/sound/usb/line6/playback.c b/sound/usb/line6/playback.c
+index a831935..8bfdda4 100644
+--- a/sound/usb/line6/playback.c
++++ b/sound/usb/line6/playback.c
+@@ -146,7 +146,9 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
+ 	int index;
+ 	int i, urb_size, urb_frames;
+ 	int ret;
+-	const int bytes_per_frame = line6pcm->properties->bytes_per_frame;
++	const int bytes_per_frame =
++		line6pcm->properties->bytes_per_channel *
++		line6pcm->properties->playback_hw.channels_max;
+ 	const int frame_increment =
+ 		line6pcm->properties->rates.rats[0].num_min;
+ 	const int frame_factor =
+@@ -166,6 +168,7 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
+ 	urb_out = line6pcm->out.urbs[index];
+ 	urb_size = 0;
+ 
++	/* TODO: this may not work for LINE6_ISO_PACKETS != 1 */
+ 	for (i = 0; i < LINE6_ISO_PACKETS; ++i) {
+ 		/* compute frame size for given sampling rate */
+ 		int fsize = 0;
+@@ -179,9 +182,11 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
+ 			line6pcm->out.count += frame_increment;
+ 			n = line6pcm->out.count / frame_factor;
+ 			line6pcm->out.count -= n * frame_factor;
+-			fsize = n * bytes_per_frame;
++			fsize = n;
+ 		}
+ 
++		fsize *= bytes_per_frame;
++
+ 		fout->offset = urb_size;
+ 		fout->length = fsize;
+ 		urb_size += fsize;
+@@ -306,6 +311,9 @@ static void audio_out_callback(struct urb *urb)
+ 	struct snd_line6_pcm *line6pcm = (struct snd_line6_pcm *)urb->context;
+ 	struct snd_pcm_substream *substream =
+ 	    get_substream(line6pcm, SNDRV_PCM_STREAM_PLAYBACK);
++	const int bytes_per_frame =
++		line6pcm->properties->bytes_per_channel *
++		line6pcm->properties->playback_hw.channels_max;
+ 
+ #if USE_CLEAR_BUFFER_WORKAROUND
+ 	memset(urb->transfer_buffer, 0, urb->transfer_buffer_length);
+@@ -330,7 +338,7 @@ static void audio_out_callback(struct urb *urb)
+ 		struct snd_pcm_runtime *runtime = substream->runtime;
+ 
+ 		line6pcm->out.pos_done +=
+-		    length / line6pcm->properties->bytes_per_frame;
++		    length / bytes_per_frame;
+ 
+ 		if (line6pcm->out.pos_done >= runtime->buffer_size)
+ 			line6pcm->out.pos_done -= runtime->buffer_size;
+diff --git a/sound/usb/line6/pod.c b/sound/usb/line6/pod.c
+index 5c3bc59..654c7b8 100644
+--- a/sound/usb/line6/pod.c
++++ b/sound/usb/line6/pod.c
+@@ -83,7 +83,7 @@ struct usb_line6_pod {
+ };
+ 
+ #define POD_SYSEX_CODE 3
+-#define POD_BYTES_PER_FRAME 6	/* 24bit audio (stereo) */
++#define POD_BYTES_PER_CHANNEL 3	/* 24bit audio (stereo) */
+ 
+ /* *INDENT-OFF* */
+ 
+@@ -167,7 +167,7 @@ static struct line6_pcm_properties pod_pcm_properties = {
+ 	.rates = {
+ 			    .nrats = 1,
+ 			    .rats = &pod_ratden},
+-	.bytes_per_frame = POD_BYTES_PER_FRAME
++	.bytes_per_channel = POD_BYTES_PER_CHANNEL
+ };
+ 
+ static const char pod_version_header[] = {
+diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
+index cb822ff..9ae8e9f2 100644
+--- a/sound/usb/line6/podhd.c
++++ b/sound/usb/line6/podhd.c
+@@ -116,7 +116,7 @@ struct usb_line6_podhd_packet {
+ 	} packet;
+ } __attribute__((packed));
+ 
+-#define PODHD_BYTES_PER_FRAME 6	/* 24bit audio (stereo) */
++#define PODHD_BYTES_PER_CHANNEL 3	/* 24bit audio (stereo) */
+ 
+ static struct snd_ratden podhd_ratden = {
+ 	.num_min = 48000,
+@@ -165,7 +165,7 @@ static struct line6_pcm_properties podhd_pcm_properties = {
+ 	.rates = {
+ 			    .nrats = 1,
+ 			    .rats = &podhd_ratden},
+-	.bytes_per_frame = PODHD_BYTES_PER_FRAME
++	.bytes_per_channel = PODHD_BYTES_PER_CHANNEL
+ };
+ 
+ static void podhd_startup_start_workqueue(unsigned long data);
+diff --git a/sound/usb/line6/toneport.c b/sound/usb/line6/toneport.c
+index 6d4c50c..da76e03 100644
+--- a/sound/usb/line6/toneport.c
++++ b/sound/usb/line6/toneport.c
+@@ -114,7 +114,7 @@ static struct line6_pcm_properties toneport_pcm_properties = {
+ 	.rates = {
+ 			    .nrats = 1,
+ 			    .rats = &toneport_ratden},
+-	.bytes_per_frame = 4
++	.bytes_per_channel = 2
+ };
+ 
+ static const struct {
+-- 
+1.9.1
+

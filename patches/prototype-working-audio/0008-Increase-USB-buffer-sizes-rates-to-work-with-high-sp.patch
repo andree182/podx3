@@ -1,0 +1,51 @@
+From bc8aba30f5987caf7dda504abb87d428560b32b9 Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Sun, 15 Nov 2015 18:58:52 +0100
+Subject: [PATCH 08/14] Increase USB buffer sizes/rates to work with high-speed
+ USB
+
+---
+ sound/usb/line6/driver.h | 3 ++-
+ sound/usb/line6/pcm.h    | 5 +++--
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/sound/usb/line6/driver.h b/sound/usb/line6/driver.h
+index 6f5e26f..4edb32a 100644
+--- a/sound/usb/line6/driver.h
++++ b/sound/usb/line6/driver.h
+@@ -18,7 +18,8 @@
+ 
+ #include "midi.h"
+ 
+-#define USB_INTERVALS_PER_SECOND (1000)
++/* TODO: it's 8000 for high-speed? */
++#define USB_INTERVALS_PER_SECOND (8000)
+ 
+ /* Fallback USB interval and max packet size values */
+ #define LINE6_FALLBACK_INTERVAL (10)
+diff --git a/sound/usb/line6/pcm.h b/sound/usb/line6/pcm.h
+index 508410a..096130b 100644
+--- a/sound/usb/line6/pcm.h
++++ b/sound/usb/line6/pcm.h
+@@ -21,7 +21,7 @@
+ #include "driver.h"
+ 
+ /* number of URBs */
+-#define LINE6_ISO_BUFFERS	2
++#define LINE6_ISO_BUFFERS	10
+ 
+ /*
+ 	number of USB frames per URB
+@@ -31,7 +31,8 @@
+ */
+ #define LINE6_ISO_PACKETS	1
+ 
+-/* in a "full speed" device (such as the PODxt Pro) this means 1ms */
++/* in a "full speed" device (such as the PODxt Pro) this means 1ms,
++   for "high speed" it's 1/8ms */
+ #define LINE6_ISO_INTERVAL	1
+ 
+ #define LINE6_IMPULSE_DEFAULT_PERIOD 100
+-- 
+1.9.1
+
