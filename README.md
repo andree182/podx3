@@ -14,7 +14,7 @@ kept in linux kernel eventually :-)
 pypodx3.py
 ==========
 
-This tool can be used to dump the bulk commands used to configure the pod.
+This tool can be used to dump the commands used to configure the pod.
 You'll need python + pyusb for it.
 
 Read/write command format seem to be (almost) the same.
@@ -52,7 +52,6 @@ straight-forward in the end, no cypher/checksums seem to be involved.
 Audio transfer
 ==============
 
-Isochronous messages seem to be in S24_3LE format, 8 channels (input; interleaved
-as 1L1R 2L2R 3L3R 4L4R (?)) / 2 channels (output).
+Isochronous data has S24_3LE format, input is 8 channels / output 2 channels. Fortunately it's out-of-box compatible with ALSA.
 
-Audio transfer appears to work without the control/bulk setup.
+While the control doesn't seem to be required, audio doesn't seem to work unless the host is listening for URBs (even if none arrive). Because of that, the linux driver has to provide isochronous audio and bulk handling code... Pity, I was hoping userspace will handle the bulk handling entirely.
