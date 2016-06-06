@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 """
 This code tries to describe + parse + generate the configuration of POD X3.
+It is to be used either from pypodx3.py or standalone, if you have USB logs in
+the right format (CSV from USBlyzer):
+
+21:45:10.482,out,01:01:01,14 00 01 00 04 00 0A 40 01 03 00 20 00 00 00 00 06 00 00 00 00 00 00 00
+
 """
 
 import sys, time, math, array, struct, string
@@ -295,16 +300,17 @@ def myparse(pc, s):
     b = map(lambda x: int(x, 16), d)
     pc.appendData(b, p)
 
-run = True
-def signal_handler(signal, frame):
-    global run
-    run = False
-signal.signal(signal.SIGINT, signal_handler)
+if __name__ == "__main__":
+    run = True
+    def signal_handler(signal, frame):
+        global run
+        run = False
+    signal.signal(signal.SIGINT, signal_handler)
 
-pc = PacketCompleter(PacketParser())
+    pc = PacketCompleter(PacketParser())
 
-while run:
-    l = sys.stdin.readline()
-    if l == "":
-        break
-    myparse(pc, l)
+    while run:
+        l = sys.stdin.readline()
+        if l == "":
+            break
+        myparse(pc, l)

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """
 Simple POD x3 control utility, written to test pod functionality.
 Warning: this code may remove your warranty, erase firmware, eat your dog and
@@ -28,6 +29,8 @@ import usb.util, usb.core
 import struct
 import threading
 import signal
+from pypodx3_parser import PacketParser, PacketCompleter
+
 
 def formathex(buffer):
     """ return buffer content as hex formatted bytes """
@@ -135,60 +138,13 @@ class POD:
         d = self.readData(4, 0x80d0)
         print "POD Serial: %d" % (struct.unpack('<I', ''.join([chr(i) for i in d])))
 
-class PacketCompleter(threading.Thread):
-    MAX_DELAY = 0.1
-
-    def __init__(self):
-        threading.Thread.__init__(self)
-        self.lock = threading.Lock()
-        self.curData = []
-        self.lastTime = None
-        self.stop = False
-
-    def run(self):
-        while not self.stop:
-            self.lock.acquire()
-            if self.curData == []:
-                self.lock.release()
-                time.sleep(0.1)
-                continue
-
-            if self.lastTime + PacketCompleter.MAX_DELAY < time.time():
-                self.packetComplete()
-
-            self.lock.release()
-
-    def appendData(self, data):
-        ## looks like [len ?? flag ??] + len * bytes
-        ## flag ==0x01: first packet
-        ## flag ==0x04: continuation of previous?
-        self.lock.acquire()
-        if data[2] == 0x01:
-            if self.curData != []:
-                self.packetComplete()
-                self.curData = []
-        elif data[2] == 0x04:
-            if self.curData == []:
-                print("ERROR: Continuing data, but no previous packet stored?!")
-                data = data[:4] # discard the frame
-
-        # print "++ ", formathex(data)
-        self.curData += data[4:]
-        self.lastTime = time.time()
-        self.lock.release()
-
-    def packetComplete(self):
-        data = self.curData
-        self.curData = []
-        self.lastTime = None
-
-        print formathex(array.array('B', data))
-
 pod = POD()
+
 # NOTE: init not needed for the bulk stuff to work
 pod.init()
 pod.get_serial_number2()
-pc = PacketCompleter()
+
+pc = PacketCompleter(PacketParser())
 pc.start()
 
 run = True

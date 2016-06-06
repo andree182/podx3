@@ -83,8 +83,3 @@ see method setparampypodx3.py and usb_volume.html for sniffer log
 
 File usb_pod_param_change.html contains messages received when i started pressing buttons
 and rotating knobs on the device (turning amp/stomp/verb/delay on/off and settingdrive/bass/middle etc.).
-
-
-
-
-

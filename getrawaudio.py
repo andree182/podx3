@@ -13,6 +13,8 @@ import time
 ID_VENDOR = 0x0e41
 ID_PRODUCT = 0x414a
 
+emptyData = chr(0) * (7 * 6)
+
 d = usb.core.find(idVendor = ID_VENDOR, idProduct = ID_PRODUCT)
 if d is None:
 	raise ValueError("not connected")
@@ -26,20 +28,22 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
 
+
 for i in range(0, 100):
-	nx = d.read(0x86, 16384, 1000)
-	print len(nx)
+    nx = d.read(0x86, 16384, 1000)
+    print len(nx)
 
-	if len(nx) == 0:
-		time.sleep(0.001)
-		continue
+    if len(nx) == 0:
+        # d.write(0x02, emptyData) # attempt to revive device after input stream freezes
+        time.sleep(0.001)
+        continue
 
-	raw = []
-	for i in chunks(nx, 170):
-		raw += i[:144]
+    raw = []
+    for i in chunks(nx, 170):
+        raw += i[:144]
 
-	d.write(0x02, nx[:len(raw)/4])
-	x += [raw]
+    d.write(0x02, nx[:len(raw)/4])
+    x += [raw]
 
 f = file("test.raw", "w")
 for i in x:

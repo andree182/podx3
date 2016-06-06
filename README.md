@@ -15,9 +15,13 @@ pypodx3.py
 ==========
 
 This tool can be used to dump the commands used to configure the pod.
-You'll need python + pyusb for it.
+You'll need python + pyusb for it. Just execute it and you should, ideally,
+start seeing decoded incoming stuff from the POD  (i.e. you need to turn knobs
+etc.).
 
-Read/write command format seem to be (almost) the same.
+Read/write command format seem to be (almost) the same, for the future
+reference - except for some direction flags/addresses. Some messages may be
+uni-directional though (to-be-researched).
 
 
 
@@ -44,9 +48,8 @@ Standard floats are used, e.g.
 
 for setting "Tone volume".
 
-The detailed format is "decrypted" to a great degree, will be described more
-closely later (or on request, whichever comes first :-) ) - but it's pretty
-straight-forward in the end, no cypher/checksums seem to be involved.
+The detailed format is "decrypted" to a great degree, and is currently
+documented by code in the module pypodx3_parser.py.
 
 
 Audio transfer
