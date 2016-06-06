@@ -29,6 +29,7 @@ have sufficient permissions (sudo).
 
 Sample output:
 
+```
 %<------------------------------------------------------------------------------
 no kernel driver attached
 set configuration...
@@ -105,7 +106,7 @@ ERROR: Unexpected value 'which': 35
 < INT 0 / 3|5 -> 1|0
 < INT 0 / 3|5 -> 0|0
 %<------------------------------------------------------------------------------
-
+```
 
 
 POD bulk message format
