@@ -1,0 +1,63 @@
+From 6d0278bd84462382ba20ed3af634cf2419432deb Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Sat, 28 Nov 2015 18:04:19 +0100
+Subject: [PATCH 08/14] ALSA: line6: Cleanup initialization
+
+Only determine control port properties if the devices needs it.
+Only initialize PCM for POD HD devices that support it.
+No POD HD seems to support MIDI, thus drop the initialization.
+
+Signed-off-by: Andrej Krutak <dev@andree.sk>
+---
+ sound/usb/line6/driver.c |  3 +--
+ sound/usb/line6/podhd.c  | 19 ++++++++-----------
+ 2 files changed, 9 insertions(+), 13 deletions(-)
+
+diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
+index 877bc34..c8aee03 100644
+--- a/sound/usb/line6/driver.c
++++ b/sound/usb/line6/driver.c
+@@ -612,9 +612,8 @@ int line6_probe(struct usb_interface *interface,
+ 		goto error;
+ 	}
+ 
+-	line6_get_interval(line6);
+-
+ 	if (properties->capabilities & LINE6_CAP_CONTROL) {
++		line6_get_interval(line6);
+ 		ret = line6_init_cap_control(line6);
+ 		if (ret < 0)
+ 			goto error;
+diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
+index 7852b93..9d6c123 100644
+--- a/sound/usb/line6/podhd.c
++++ b/sound/usb/line6/podhd.c
+@@ -338,17 +338,14 @@ static int podhd_init(struct usb_line6 *line6,
+ 
+ 	line6->disconnect = podhd_disconnect;
+ 
+-	/* initialize MIDI subsystem: */
+-	err = line6_init_midi(line6);
+-	if (err < 0)
+-		return err;
+-
+-	/* initialize PCM subsystem: */
+-	err = line6_init_pcm(line6,
+-		(id->driver_info == LINE6_PODX3) ? &podx3_pcm_properties :
+-		&podhd_pcm_properties);
+-	if (err < 0)
+-		return err;
++	if (pod->line6.properties->capabilities & LINE6_CAP_PCM) {
++		/* initialize PCM subsystem: */
++		err = line6_init_pcm(line6,
++			(id->driver_info == LINE6_PODX3) ? &podx3_pcm_properties :
++			&podhd_pcm_properties);
++		if (err < 0)
++			return err;
++	}
+ 
+ 	if (!(pod->line6.properties->capabilities & LINE6_CAP_CONTROL)) {
+ 		/* register USB audio system directly */
+-- 
+1.9.1
+

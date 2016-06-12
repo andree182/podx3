@@ -1,0 +1,51 @@
+From 37d5a92df3ac23acd25350c3dd6774e2078dc402 Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Sun, 12 Jun 2016 20:57:44 +0200
+Subject: [PATCH 13/14] Add support for POD X3 Live (only USB ID differs from
+ POD X3)
+
+---
+ sound/usb/line6/podhd.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
+index 9d6c123..e7dcd43 100644
+--- a/sound/usb/line6/podhd.c
++++ b/sound/usb/line6/podhd.c
+@@ -37,6 +37,7 @@ enum {
+ 	LINE6_PODHD500_0,
+ 	LINE6_PODHD500_1,
+ 	LINE6_PODX3,
++	LINE6_PODX3LIVE
+ };
+ 
+ struct usb_line6_podhd {
+@@ -370,6 +371,7 @@ static const struct usb_device_id podhd_id_table[] = {
+ 	{ LINE6_IF_NUM(0x414D, 0), .driver_info = LINE6_PODHD500_0 },
+ 	{ LINE6_IF_NUM(0x414D, 1), .driver_info = LINE6_PODHD500_1 },
+ 	{ LINE6_IF_NUM(0x414A, 0), .driver_info = LINE6_PODX3 },
++	{ LINE6_IF_NUM(0x414B, 0), .driver_info = LINE6_PODX3LIVE },
+ 	{}
+ };
+ 
+@@ -431,6 +433,17 @@ static const struct line6_properties podhd_properties_table[] = {
+ 		.ep_audio_r = 0x86,
+ 		.ep_audio_w = 0x02,
+ 	},
++	[LINE6_PODX3LIVE] = {
++		.id = "PODX3LIVE",
++		.name = "POD X3 LIVE",
++		.capabilities	= LINE6_CAP_CONTROL
++				| LINE6_CAP_PCM | LINE6_CAP_HWMON | LINE6_CAP_IN_NEEDS_OUT,
++		.altsetting = 1,
++		.ep_ctrl_r = 0x81,
++		.ep_ctrl_w = 0x01,
++		.ep_audio_r = 0x86,
++		.ep_audio_w = 0x02,
++	},
+ };
+ 
+ /*
+-- 
+1.9.1
+

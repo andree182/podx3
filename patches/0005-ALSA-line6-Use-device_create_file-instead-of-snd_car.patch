@@ -1,11 +1,13 @@
-From 91be82782f754882fac4b407363b9097d4613acf Mon Sep 17 00:00:00 2001
+From 1d6b236d042361aec5760338ab146578cc429607 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 22 Nov 2015 16:51:45 +0100
-Subject: [PATCH 5/6] ALSA: line6: Use device_create_file instead of
- snd_card_add_dev_attr.
+Subject: [PATCH 05/14] ALSA: line6: Use device_create_file instead of
+ snd_card_add_dev_attr
 
 The latter seems to create invalid configuration, the device pointer passed to the attr
 callbacks is not correct afterwards (results into segfaults when accessing the attributes).
+
+Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
  sound/usb/line6/podhd.c | 59 +++++++++++++++++++++++++++++++++++--------------
  1 file changed, 43 insertions(+), 16 deletions(-)

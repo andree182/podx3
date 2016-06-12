@@ -1,17 +1,18 @@
-From 31d7f63415d9d88ae75e8f16def631d200cbe524 Mon Sep 17 00:00:00 2001
+From 0dca7ef346ec65b2ae53eb76ab847f0d91f7e8a4 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 21:44:33 +0100
-Subject: [PATCH 1/6] ALSA: line6: Make settings of the driver more generic, as
- required by POD X3.
+Subject: [PATCH 01/14] ALSA: line6: Make driver configuration more generic.
 
 The main reasons are different settings for USB low/high speed and possible different channel
-counts for in/out.
+counts for in/out; required by POD X3.
 
 This includes:
 * iso_buffers (count of iso buffers depends on USB speed, 2 is not enough for high speed)
 * bytes_per_frame -> bytes_per_channel
 * max_packet_size -> max_packet_size_in/out
 * USB_INTERVALS_PER_SECOND -> LOW/HIGH settings (high needs 8000, instead of 1000)
+
+Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
  sound/usb/line6/capture.c  | 42 +++++++++++++++++++++++++++++-------------
  sound/usb/line6/driver.c   | 15 ++++++++++-----

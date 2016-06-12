@@ -1,0 +1,68 @@
+From e463096535d569657dbf88a305929cbf22110224 Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Sat, 12 Dec 2015 15:59:25 +0100
+Subject: [PATCH 11/14] ALSA: line6: Deregister hwdep interface at exit
+
+Signed-off-by: Andrej Krutak <dev@andree.sk>
+---
+ sound/usb/line6/driver.c | 10 ++++++++++
+ sound/usb/line6/driver.h |  1 +
+ 2 files changed, 11 insertions(+)
+
+diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
+index d867005..2857477 100644
+--- a/sound/usb/line6/driver.c
++++ b/sound/usb/line6/driver.c
+@@ -530,6 +530,8 @@ static int line6_hwdep_open(struct snd_hwdep *hw, struct file * file)
+ {
+ 	struct usb_line6 *line6 = hw->private_data;
+ 
++	/* NOTE: hwdep already provides atomicity (exclusive == true), but for
++	 * sure... */
+ 	if (test_and_set_bit(0, &line6->buffer_circular.active))
+ 		return -EBUSY;
+ 
+@@ -649,6 +651,8 @@ static int line6_hwdep_init(struct usb_line6 *line6)
+ 	int err;
+ 	struct snd_hwdep *hwdep;
+ 
++	/* TODO: usb_driver_claim_interface(); */
++
+ 	line6->process_message = line6_hwdep_push_message;
+ 
+ 	line6->buffer_circular.data = NULL;
+@@ -677,6 +681,7 @@ static int line6_hwdep_init(struct usb_line6 *line6)
+ 	hwdep->ops = hwdep_ops;
+ 	hwdep->private_data = line6;
+ 	hwdep->exclusive = true;
++	line6->buffer_circular.hwdep = hwdep;
+ 
+ end:
+ 	if (line6->buffer_circular.data)
+@@ -830,6 +835,11 @@ void line6_disconnect(struct usb_interface *interface)
+ 	if (line6->disconnect)
+ 		line6->disconnect(line6);
+ 
++	if (line6->buffer_circular.hwdep) {
++		snd_device_free(line6->card, line6->buffer_circular.hwdep);
++		line6->buffer_circular.hwdep = NULL;
++	}
++
+ 	dev_info(&interface->dev, "Line 6 %s now disconnected\n",
+ 		 line6->properties->name);
+ 
+diff --git a/sound/usb/line6/driver.h b/sound/usb/line6/driver.h
+index 05e155c..2df02c6 100644
+--- a/sound/usb/line6/driver.h
++++ b/sound/usb/line6/driver.h
+@@ -159,6 +159,7 @@ struct usb_line6 {
+ 
+ 	/* Circular buffer for non-MIDI control messages */
+ 	struct {
++		struct snd_hwdep *hwdep;
+ 		unsigned long active;
+ 		char *data;
+ 		int *data_len;
+-- 
+1.9.1
+

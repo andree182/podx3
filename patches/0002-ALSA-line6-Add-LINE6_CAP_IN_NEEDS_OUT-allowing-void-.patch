@@ -1,11 +1,13 @@
-From 2354aac8941c9a1a84eeb00fe3431fb93d96db27 Mon Sep 17 00:00:00 2001
+From e7bfa43bacbdf214b3b99453227980386bbb24c8 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 21:56:00 +0100
-Subject: [PATCH 2/6] ALSA: line6: Add LINE6_STREAM_CAPTURE_HELPER, which
- creates empty playback stream during capture.
+Subject: [PATCH 02/14] ALSA: line6: Add LINE6_CAP_IN_NEEDS_OUT, allowing void
+ playback stream during capture
 
 E.g. POD X3 seems to require playback data to be sent to it to generate capture data.
 Otherwise the device stalls and doesn't send any more capture data until it's reset.
+
+Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
  sound/usb/line6/driver.h |  4 +++-
  sound/usb/line6/pcm.c    | 21 +++++++++++++++++++--

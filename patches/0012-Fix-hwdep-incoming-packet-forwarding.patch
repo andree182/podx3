@@ -1,0 +1,75 @@
+From 15430b1ae7b6baa01e66455e03ec8666b82288fb Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Sun, 12 Jun 2016 20:47:40 +0200
+Subject: [PATCH 12/14] Fix hwdep incoming packet forwarding
+
+---
+ sound/usb/line6/driver.c | 14 ++++++++++----
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
+index 2857477..bc0b003 100644
+--- a/sound/usb/line6/driver.c
++++ b/sound/usb/line6/driver.c
+@@ -317,8 +317,11 @@ static void line6_data_received(struct urb *urb)
+ 				line6->process_message(line6);
+ 		}
+ 	} else {
++		line6->buffer_message = urb->transfer_buffer;
++		line6->message_length = urb->actual_length;
+ 		if (line6->process_message)
+ 			line6->process_message(line6);
++		line6->buffer_message = NULL;
+ 	}
+ 
+ 	line6_start_listen(line6);
+@@ -564,8 +567,9 @@ line6_hwdep_read(struct snd_hwdep *hwdep, char __user *buf, long count,
+ 	unsigned long tail;
+ 	long rv = 0;
+ 
+-	if (down_interruptible(&line6->buffer_circular.sem))
++	if (down_interruptible(&line6->buffer_circular.sem)) {
+ 		return -ERESTARTSYS;
++	}
+ 	/* There must an item now in the buffer... */
+ 
+ 	spin_lock(&line6->buffer_circular.read_lock);
+@@ -581,10 +585,13 @@ line6_hwdep_read(struct snd_hwdep *hwdep, char __user *buf, long count,
+ 	}
+ 
+ 	if (copy_to_user(buf,
+-		&line6->buffer_circular.data[tail * LINE6_MESSAGE_MAXLEN], count)
++		&line6->buffer_circular.data[tail * LINE6_MESSAGE_MAXLEN],
++		line6->buffer_circular.data_len[tail])
+ 	) {
+ 		rv = -EFAULT;
+ 		goto end;
++	} else {
++		rv = line6->buffer_circular.data_len[tail];
+ 	}
+ 
+ 	smp_store_release(&line6->buffer_circular.tail,
+@@ -652,7 +659,6 @@ static int line6_hwdep_init(struct usb_line6 *line6)
+ 	struct snd_hwdep *hwdep;
+ 
+ 	/* TODO: usb_driver_claim_interface(); */
+-
+ 	line6->process_message = line6_hwdep_push_message;
+ 
+ 	line6->buffer_circular.data = NULL;
+@@ -672,7 +678,6 @@ static int line6_hwdep_init(struct usb_line6 *line6)
+ 	}
+ 
+ 	line6->buffer_circular.active = 0;
+-
+ 	err = snd_hwdep_new(line6->card, "config", 0, &hwdep);
+ 	if (err < 0)
+ 		goto end;
+@@ -894,3 +899,4 @@ EXPORT_SYMBOL_GPL(line6_resume);
+ MODULE_AUTHOR(DRIVER_AUTHOR);
+ MODULE_DESCRIPTION(DRIVER_DESC);
+ MODULE_LICENSE("GPL");
++
+-- 
+1.9.1
+

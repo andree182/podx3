@@ -1,0 +1,33 @@
+From a723f500e538fc557c13c98c4a5fd9948e1ad144 Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Sun, 12 Jun 2016 21:55:11 +0200
+Subject: [PATCH 14/14] Make the resource freeing not dependent on existence of
+ private data from podhd module (may be gone at this time or something)
+
+---
+ sound/usb/line6/driver.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
+index bc0b003..9b3791e 100644
+--- a/sound/usb/line6/driver.c
++++ b/sound/usb/line6/driver.c
+@@ -479,13 +479,14 @@ static void line6_destruct(struct snd_card *card)
+ 	struct usb_device *usbdev = line6->usbdev;
+ 
+ 	/* free buffer memory first: */
+-	if (line6->properties->capabilities & LINE6_CAP_CONTROL_MIDI) {
++	if (line6->buffer_message) {
+ 		kfree(line6->buffer_message);
+ 	}
+ 	kfree(line6->buffer_listen);
+ 
+ 	/* then free URBs: */
+ 	usb_free_urb(line6->urb_listen);
++	line6->urb_listen = NULL;
+ 
+ 	/* decrement reference counters: */
+ 	usb_put_dev(usbdev);
+-- 
+1.9.1
+

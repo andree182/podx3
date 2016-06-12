@@ -1,11 +1,13 @@
-From 5fd7cd2ff18d1ce63c3cbee78fecf54fc6121e12 Mon Sep 17 00:00:00 2001
+From 7bbd8a408e6584b0509fda0b0994a71f6492a4a2 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 22:03:15 +0100
-Subject: [PATCH 3/6] ALSA: line6: Differentiate between device init (via
- control EP) and MIDI data transfer (via interrupt endpoints).
+Subject: [PATCH 03/14] ALSA: line6: Distinguish device init (ctrl EP) and MIDI
+ data transfer (int EP)
 
 POD X3 can initialize similarly to older PODs, but it doesn't have the MIDI interface. Instead,
-data configuration is done via proprietary bulk EP messages.
+configuration is done via proprietary bulk EP messages.
+
+Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
  sound/usb/line6/driver.c | 10 +++++-----
  sound/usb/line6/driver.h |  6 ++++--

@@ -1,16 +1,34 @@
-From 5c8907c7b3f58a2062ce360f25e0ee9615fada19 Mon Sep 17 00:00:00 2001
+From 4e827d12138a2c4bcefe7a5e935897c40047ada4 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 22:12:03 +0100
-Subject: [PATCH 4/6] ALSA: line6: Add support for POD X3.
+Subject: [PATCH 04/14] ALSA: line6: Add support for POD X3
 
 This includes audio in/out and basic initialization via control EP (emulates what original driver does).
-Since the bulk endpoints are not used by the driver, they are left for user-space access (e.g. via libusb).
-
 The initialization is done similarly to original POD, firmware and serial IDs are read and exported via sysfs.
----
- sound/usb/line6/podhd.c | 274 +++++++++++++++++++++++++++++++++++++++++++++---
- 1 file changed, 261 insertions(+), 13 deletions(-)
 
+Signed-off-by: Andrej Krutak <dev@andree.sk>
+---
+ sound/usb/line6/Kconfig |   4 +-
+ sound/usb/line6/podhd.c | 274 +++++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 263 insertions(+), 15 deletions(-)
+
+diff --git a/sound/usb/line6/Kconfig b/sound/usb/line6/Kconfig
+index f4585d37..8ffcf48 100644
+--- a/sound/usb/line6/Kconfig
++++ b/sound/usb/line6/Kconfig
+@@ -21,10 +21,10 @@ config SND_USB_POD
+ 	      re-amping)
+ 
+ config SND_USB_PODHD
+-	tristate "Line 6 POD HD300/400/500 USB support"
++	tristate "Line 6 POD X3/HD300/400/500 USB support"
+ 	select SND_USB_LINE6
+ 	help
+-	  This is a driver for POD HD300, 400 and 500 devices.
++	  This is a driver for POD X3, HD300, 400 and 500 devices.
+ 
+ config SND_USB_TONEPORT
+ 	tristate "TonePort GX, UX1 and UX2 USB support"
 diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
 index 4fc4789..d698344 100644
 --- a/sound/usb/line6/podhd.c
