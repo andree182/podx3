@@ -29,6 +29,8 @@ import usb.util, usb.core
 import struct
 import threading
 import signal
+import io
+import traceback
 from pypodx3_parser import PacketParser, PacketCompleter
 
 
@@ -54,15 +56,21 @@ class POD:
     USB_VENDOR_D2H = 0xC0
 
     def __init__(self,) :
-      self.device = usb.core.find(idVendor = POD.VENDOR_ID, idProduct = POD.PRODUCT_ID)
-      if self.device.is_kernel_driver_active(0):
-          try:
-              self.device.detach_kernel_driver(0)
-              print "kernel driver detached"
-          except usb.core.USBError as e:
-              sys.exit("Could not detach kernel driver: %s" % str(e))
-      else:
-          print "no kernel driver attached"
+      self.useKernelDriver = False
+      try:
+          if file("/sys/class/sound/hwC0D0/device/id").read().find("PODX3") != -1:
+              self.hwdep = io.open("/dev/snd/hwC0D0", "rb")
+              self.useKernelDriver = True
+      except:
+          self.device = usb.core.find(idVendor = POD.VENDOR_ID, idProduct = POD.PRODUCT_ID)
+          if self.device.is_kernel_driver_active(0):
+              try:
+                  self.device.detach_kernel_driver(0)
+                  print "kernel driver detached"
+              except usb.core.USBError as e:
+                  sys.exit("Could not detach kernel driver: %s" % str(e))
+          else:
+              print "no kernel driver attached"
 
     def setguitarmic(self):
         """ set guitar/mic mode """
@@ -84,6 +92,9 @@ class POD:
         return resp
 
     def init(self):
+        if self.useKernelDriver:
+            return
+
         """ pod initialization - trying to do the same things the original driver does during X3 startup """
         print "set configuration..."
         cfg = self.device.set_configuration(1)
@@ -135,9 +146,17 @@ class POD:
             print "exception in bulk write:",e
 
     def get_serial_number2(self):
-        d = self.readData(4, 0x80d0)
-        print "POD Serial: %d" % (struct.unpack('<I', ''.join([chr(i) for i in d])))
+        if self.useKernelDriver:
+            print("POD Serial: %s" % (file("/sys/class/sound/card0/device/serial_number").read()))
+        else:
+            d = self.readData(4, 0x80d0)
+            print "POD Serial: %d" % (struct.unpack('<I', ''.join([chr(i) for i in d])))
 
+    def read(self):
+        if self.useKernelDriver:
+            return map(ord, self.hwdep.read1(1024))
+        else:
+            return self.device.read(POD.BULK_IN_EP, 0x40)
 pod = POD()
 
 # NOTE: init not needed for the bulk stuff to work
@@ -158,9 +177,10 @@ signal.signal(signal.SIGINT, signal_handler)
 
 while run:
     try:
-        resp = pod.device.read(POD.BULK_IN_EP, 0x40)
+        resp = pod.read()
         pc.appendData(resp)
     except:
+        #traceback.print_exc()
         pass
 
 pc.stop = True
