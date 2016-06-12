@@ -58,9 +58,12 @@ class POD:
     def __init__(self,) :
       self.useKernelDriver = False
       try:
-          if file("/sys/class/sound/hwC0D0/device/id").read().find("PODX3") != -1:
-              self.hwdep = io.open("/dev/snd/hwC0D0", "rb")
-              self.useKernelDriver = True
+          for i in range(0, 9):
+              self.hwdepDevice = "hwC%dD0" % (i)
+              if file("/sys/class/sound/%s/device/id" % (self.hwdepDevice)).read().find("PODX3") != -1:
+                  self.hwdep = io.open("/dev/snd/" + self.hwdepDevice, "rb")
+                  self.useKernelDriver = True
+                  break
       except:
           self.device = usb.core.find(idVendor = POD.VENDOR_ID, idProduct = POD.PRODUCT_ID)
           if self.device.is_kernel_driver_active(0):
@@ -147,7 +150,7 @@ class POD:
 
     def get_serial_number2(self):
         if self.useKernelDriver:
-            print("POD Serial: %s" % (file("/sys/class/sound/card0/device/serial_number").read()))
+            print("POD Serial: %s" % (file("/sys/class/sound/%s/device/device/serial_number" % (self.hwdepDevice)).read()))
         else:
             d = self.readData(4, 0x80d0)
             print "POD Serial: %d" % (struct.unpack('<I', ''.join([chr(i) for i in d])))
