@@ -57,23 +57,25 @@ class POD:
 
     def __init__(self,) :
       self.useKernelDriver = False
-      try:
-          for i in range(0, 9):
-              self.hwdepDevice = "hwC%dD0" % (i)
+      for i in range(0, 9):
+          self.hwdepDevice = "hwC%dD0" % (i)
+          try:
               if file("/sys/class/sound/%s/device/id" % (self.hwdepDevice)).read().find("PODX3") != -1:
                   self.hwdep = io.open("/dev/snd/" + self.hwdepDevice, "rb")
                   self.useKernelDriver = True
-                  break
-      except:
-          self.device = usb.core.find(idVendor = POD.VENDOR_ID, idProduct = POD.PRODUCT_ID)
-          if self.device.is_kernel_driver_active(0):
-              try:
-                  self.device.detach_kernel_driver(0)
-                  print "kernel driver detached"
-              except usb.core.USBError as e:
-                  sys.exit("Could not detach kernel driver: %s" % str(e))
-          else:
-              print "no kernel driver attached"
+                  return
+          except:
+              pass
+      
+      self.device = usb.core.find(idVendor = POD.VENDOR_ID, idProduct = POD.PRODUCT_ID)
+      if self.device.is_kernel_driver_active(0):
+          try:
+              self.device.detach_kernel_driver(0)
+              print "kernel driver detached"
+          except usb.core.USBError as e:
+              sys.exit("Could not detach kernel driver: %s" % str(e))
+      else:
+          print "no kernel driver attached"
 
     def setguitarmic(self):
         """ set guitar/mic mode """
