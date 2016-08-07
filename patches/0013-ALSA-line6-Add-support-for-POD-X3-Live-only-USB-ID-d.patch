@@ -1,9 +1,10 @@
-From 37d5a92df3ac23acd25350c3dd6774e2078dc402 Mon Sep 17 00:00:00 2001
+From f0fd4d54cbe9e83da958a44f514f4856b859166f Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 12 Jun 2016 20:57:44 +0200
-Subject: [PATCH 13/14] Add support for POD X3 Live (only USB ID differs from
- POD X3)
+Subject: [PATCH 13/14] ALSA: line6: Add support for POD X3 Live (only USB ID
+ differs from POD X3)
 
+Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
  sound/usb/line6/podhd.c | 13 +++++++++++++
  1 file changed, 13 insertions(+)

@@ -1,4 +1,4 @@
-From 1d6b236d042361aec5760338ab146578cc429607 Mon Sep 17 00:00:00 2001
+From 59b4236376cf6686cf112459c6db2f4a9ae59c03 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 22 Nov 2015 16:51:45 +0100
 Subject: [PATCH 05/14] ALSA: line6: Use device_create_file instead of

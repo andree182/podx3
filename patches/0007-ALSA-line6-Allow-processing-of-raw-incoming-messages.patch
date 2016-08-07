@@ -1,4 +1,4 @@
-From 95a4287d80de2ce0d243b05088bb8c8906955090 Mon Sep 17 00:00:00 2001
+From 53093749d79ff60bb5d253729d672caa13760bd7 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 22 Nov 2015 20:56:31 +0100
 Subject: [PATCH 07/14] ALSA: line6: Allow processing of raw incoming messages

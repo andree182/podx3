@@ -1,15 +1,18 @@
-From a723f500e538fc557c13c98c4a5fd9948e1ad144 Mon Sep 17 00:00:00 2001
+From 7db6a9349b5404ec5269cd9fe0cdef1e1a15c45f Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 12 Jun 2016 21:55:11 +0200
-Subject: [PATCH 14/14] Make the resource freeing not dependent on existence of
- private data from podhd module (may be gone at this time or something)
+Subject: [PATCH 11/14] ALSA: line6: Only free buffer if it is set.
 
+This makes the resource freeing not dependent on the existence of private data
+from the podhd module, which may be gone during the call.
+
+Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
  sound/usb/line6/driver.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
-index bc0b003..9b3791e 100644
+index 7f5e3a3..56fb704 100644
 --- a/sound/usb/line6/driver.c
 +++ b/sound/usb/line6/driver.c
 @@ -479,13 +479,14 @@ static void line6_destruct(struct snd_card *card)

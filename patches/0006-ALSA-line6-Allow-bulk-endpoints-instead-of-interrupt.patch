@@ -1,4 +1,4 @@
-From cb12336d53a017bfc6d78f033840374899526fc4 Mon Sep 17 00:00:00 2001
+From b37be741da6b4de71b154a783252fa763f2feb12 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Thu, 7 May 2015 21:48:55 +0200
 Subject: [PATCH 06/14] ALSA: line6: Allow bulk endpoints instead of interrupt

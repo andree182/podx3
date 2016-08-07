@@ -1,4 +1,4 @@
-From 327d8d9ed999e493760dc3278797542d5c6c3c7c Mon Sep 17 00:00:00 2001
+From 5affb462372b087f65f6b2868dfb34471738a47d Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 29 Nov 2015 22:16:50 +0100
 Subject: [PATCH 09/14] ALSA: line6: Add hwdep interface to access the POD
@@ -12,25 +12,29 @@ e.g. sense/modify volume(s).
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
- include/uapi/sound/asound.h |   1 +
- sound/usb/line6/driver.c    | 157 ++++++++++++++++++++++++++++++++++++++++++++
+ include/uapi/sound/asound.h |   3 +-
+ sound/usb/line6/driver.c    | 167 ++++++++++++++++++++++++++++++++++++++++++++
  sound/usb/line6/driver.h    |  12 ++++
- 3 files changed, 170 insertions(+)
+ 3 files changed, 181 insertions(+), 1 deletion(-)
 
 diff --git a/include/uapi/sound/asound.h b/include/uapi/sound/asound.h
-index a45be6b..5437e07 100644
+index a45be6b..7612cae 100644
 --- a/include/uapi/sound/asound.h
 +++ b/include/uapi/sound/asound.h
-@@ -100,6 +100,7 @@ enum {
+@@ -100,9 +100,10 @@ enum {
  	SNDRV_HWDEP_IFACE_FW_FIREWORKS,	/* Echo Audio Fireworks based device */
  	SNDRV_HWDEP_IFACE_FW_BEBOB,	/* BridgeCo BeBoB based device */
  	SNDRV_HWDEP_IFACE_FW_OXFW,	/* Oxford OXFW970/971 based device */
 +	SNDRV_HWDEP_IFACE_LINE6,	/* Line6 USB processors */
  
  	/* Don't forget to change the following: */
- 	SNDRV_HWDEP_IFACE_LAST = SNDRV_HWDEP_IFACE_FW_OXFW
+-	SNDRV_HWDEP_IFACE_LAST = SNDRV_HWDEP_IFACE_FW_OXFW
++	SNDRV_HWDEP_IFACE_LAST = SNDRV_HWDEP_IFACE_LINE6
+ };
+ 
+ struct snd_hwdep_info {
 diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
-index c8aee03..9f9e22b 100644
+index c8aee03..9bae3a3 100644
 --- a/sound/usb/line6/driver.c
 +++ b/sound/usb/line6/driver.c
 @@ -14,9 +14,11 @@
@@ -45,7 +49,19 @@ index c8aee03..9f9e22b 100644
  
  #include "capture.h"
  #include "driver.h"
-@@ -522,6 +524,157 @@ static void line6_get_interval(struct usb_line6 *line6)
+@@ -315,8 +317,11 @@ static void line6_data_received(struct urb *urb)
+ 				line6->process_message(line6);
+ 		}
+ 	} else {
++		line6->buffer_message = urb->transfer_buffer;
++		line6->message_length = urb->actual_length;
+ 		if (line6->process_message)
+ 			line6->process_message(line6);
++		line6->buffer_message = NULL;
+ 	}
+ 
+ 	line6_start_listen(line6);
+@@ -522,6 +527,163 @@ static void line6_get_interval(struct usb_line6 *line6)
  	}
  }
  
@@ -55,11 +71,29 @@ index c8aee03..9f9e22b 100644
 +{
 +	struct usb_line6 *line6 = hw->private_data;
 +
++	/* NOTE: hwdep already provides atomicity (exclusive == true), but for
++	 * sure... */
++	if (test_and_set_bit(0, &line6->buffer_circular.active))
++		return -EBUSY;
++
 +	line6->buffer_circular.head = 0;
 +	line6->buffer_circular.tail = 0;
 +	sema_init(&line6->buffer_circular.sem, 0);
 +
 +	line6->buffer_circular.active = 1;
++
++	line6->buffer_circular.data =
++		kmalloc(LINE6_MESSAGE_MAXLEN * LINE6_MESSAGE_MAXCOUNT, GFP_KERNEL);
++	if (!line6->buffer_circular.data) {
++		return -ENOMEM;
++	}
++	line6->buffer_circular.data_len =
++		kmalloc(sizeof(*line6->buffer_circular.data_len) *
++			LINE6_MESSAGE_MAXCOUNT, GFP_KERNEL);
++	if (!line6->buffer_circular.data_len) {
++		kfree(line6->buffer_circular.data);
++		return -ENOMEM;
++	}
 +
 +	return 0;
 +}
@@ -73,6 +107,8 @@ index c8aee03..9f9e22b 100644
 +	 * semaphore at next open. */
 +	line6->buffer_circular.active = 0;
 +
++	kfree(line6->buffer_circular.data);
++	kfree(line6->buffer_circular.data_len);
 +	return 0;
 +}
 +
@@ -84,8 +120,9 @@ index c8aee03..9f9e22b 100644
 +	struct usb_line6 *line6 = hwdep->private_data;
 +	unsigned long tail;
 +
-+	if (down_interruptible(&line6->buffer_circular.sem))
++	if (down_interruptible(&line6->buffer_circular.sem)) {
 +		return -ERESTARTSYS;
++	}
 +	/* There must an item now in the buffer... */
 +
 +	tail = line6->buffer_circular.tail;
@@ -97,9 +134,14 @@ index c8aee03..9f9e22b 100644
 +	}
 +
 +	if (copy_to_user(buf,
-+		&line6->buffer_circular.data[tail * LINE6_MESSAGE_MAXLEN], count)
-+	)
-+		return -EFAULT;
++		&line6->buffer_circular.data[tail * LINE6_MESSAGE_MAXLEN],
++		line6->buffer_circular.data_len[tail])
++	) {
++		rv = -EFAULT;
++		goto end;
++	} else {
++		rv = line6->buffer_circular.data_len[tail];
++	}
 +
 +	smp_store_release(&line6->buffer_circular.tail,
 +				(tail + 1) & (LINE6_MESSAGE_MAXCOUNT - 1));
@@ -163,26 +205,10 @@ index c8aee03..9f9e22b 100644
 +	int err;
 +	struct snd_hwdep *hwdep;
 +
++	/* TODO: usb_driver_claim_interface(); */
 +	line6->process_message = line6_hwdep_push_message;
 +
-+	line6->buffer_circular.data = NULL;
-+	line6->buffer_circular.data_len = NULL;
-+	line6->buffer_circular.data =
-+		kmalloc(LINE6_MESSAGE_MAXLEN * LINE6_MESSAGE_MAXCOUNT, GFP_KERNEL);
-+	if (!line6->buffer_circular.data) {
-+		err = -ENOMEM;
-+		goto end;
-+	}
-+	line6->buffer_circular.data_len =
-+		kmalloc(sizeof(*line6->buffer_circular.data_len) *
-+			LINE6_MESSAGE_MAXCOUNT, GFP_KERNEL);
-+	if (!line6->buffer_circular.data_len) {
-+		err = -ENOMEM;
-+		goto end;
-+	}
-+
 +	line6->buffer_circular.active = 0;
-+
 +	err = snd_hwdep_new(line6->card, "config", 0, &hwdep);
 +	if (err < 0)
 +		goto end;
@@ -193,17 +219,13 @@ index c8aee03..9f9e22b 100644
 +	hwdep->exclusive = true;
 +
 +end:
-+	if (line6->buffer_circular.data)
-+		kfree(line6->buffer_circular.data);
-+	if (line6->buffer_circular.data_len)
-+		kfree(line6->buffer_circular.data_len);
 +	return err;
 +}
 +
  static int line6_init_cap_control(struct usb_line6 *line6)
  {
  	int ret;
-@@ -539,6 +692,10 @@ static int line6_init_cap_control(struct usb_line6 *line6)
+@@ -539,6 +701,10 @@ static int line6_init_cap_control(struct usb_line6 *line6)
  		line6->buffer_message = kmalloc(LINE6_MESSAGE_MAXLEN, GFP_KERNEL);
  		if (!line6->buffer_message)
  			return -ENOMEM;
@@ -214,6 +236,11 @@ index c8aee03..9f9e22b 100644
  	}
  
  	ret = line6_start_listen(line6);
+@@ -716,3 +882,4 @@ EXPORT_SYMBOL_GPL(line6_resume);
+ MODULE_AUTHOR(DRIVER_AUTHOR);
+ MODULE_DESCRIPTION(DRIVER_DESC);
+ MODULE_LICENSE("GPL");
++
 diff --git a/sound/usb/line6/driver.h b/sound/usb/line6/driver.h
 index 71ad299..f4ab6cd 100644
 --- a/sound/usb/line6/driver.h

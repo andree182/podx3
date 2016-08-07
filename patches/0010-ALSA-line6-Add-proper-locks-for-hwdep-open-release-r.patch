@@ -1,4 +1,4 @@
-From d9714a17e96785c80e932db3fd6c0bcf09253151 Mon Sep 17 00:00:00 2001
+From 79fcfd60a5ecefeaae05a1973836764972d15a41 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Tue, 1 Dec 2015 21:28:26 +0100
 Subject: [PATCH 10/14] ALSA: line6: Add proper locks for hwdep
@@ -6,21 +6,15 @@ Subject: [PATCH 10/14] ALSA: line6: Add proper locks for hwdep
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
- sound/usb/line6/driver.c | 25 ++++++++++++++++++-------
+ sound/usb/line6/driver.c | 16 +++++++++++-----
  sound/usb/line6/driver.h |  3 ++-
- 2 files changed, 20 insertions(+), 8 deletions(-)
+ 2 files changed, 13 insertions(+), 6 deletions(-)
 
 diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
-index 9f9e22b..d867005 100644
+index 9bae3a3..7f5e3a3 100644
 --- a/sound/usb/line6/driver.c
 +++ b/sound/usb/line6/driver.c
-@@ -530,11 +530,13 @@ static int line6_hwdep_open(struct snd_hwdep *hw, struct file * file)
- {
- 	struct usb_line6 *line6 = hw->private_data;
- 
-+	if (test_and_set_bit(0, &line6->buffer_circular.active))
-+		return -EBUSY;
-+
+@@ -541,8 +541,7 @@ static int line6_hwdep_open(struct snd_hwdep *hw, struct file * file)
  	line6->buffer_circular.head = 0;
  	line6->buffer_circular.tail = 0;
  	sema_init(&line6->buffer_circular.sem, 0);
@@ -28,25 +22,26 @@ index 9f9e22b..d867005 100644
 -	line6->buffer_circular.active = 1;
 +	spin_lock_init(&line6->buffer_circular.read_lock);
  
- 	return 0;
- }
-@@ -546,7 +548,7 @@ static int line6_hwdep_release(struct snd_hwdep *hw, struct file * file)
+ 	line6->buffer_circular.data =
+ 		kmalloc(LINE6_MESSAGE_MAXLEN * LINE6_MESSAGE_MAXCOUNT, GFP_KERNEL);
+@@ -567,7 +566,7 @@ static int line6_hwdep_release(struct snd_hwdep *hw, struct file * file)
  
  	/* By this time, no readers are waiting, we can safely recreate the
  	 * semaphore at next open. */
 -	line6->buffer_circular.active = 0;
 +	clear_bit(0, &line6->buffer_circular.active);
  
- 	return 0;
- }
-@@ -558,28 +560,37 @@ line6_hwdep_read(struct snd_hwdep *hwdep, char __user *buf, long count,
+ 	kfree(line6->buffer_circular.data);
+ 	kfree(line6->buffer_circular.data_len);
+@@ -581,18 +580,23 @@ line6_hwdep_read(struct snd_hwdep *hwdep, char __user *buf, long count,
  {
  	struct usb_line6 *line6 = hwdep->private_data;
  	unsigned long tail;
 +	long rv = 0;
  
- 	if (down_interruptible(&line6->buffer_circular.sem))
+ 	if (down_interruptible(&line6->buffer_circular.sem)) {
  		return -ERESTARTSYS;
+ 	}
  	/* There must an item now in the buffer... */
  
 +	spin_lock(&line6->buffer_circular.read_lock);
@@ -63,14 +58,7 @@ index 9f9e22b..d867005 100644
  	}
  
  	if (copy_to_user(buf,
- 		&line6->buffer_circular.data[tail * LINE6_MESSAGE_MAXLEN], count)
--	)
--		return -EFAULT;
-+	) {
-+		rv = -EFAULT;
-+		goto end;
-+	}
- 
+@@ -608,7 +612,9 @@ line6_hwdep_read(struct snd_hwdep *hwdep, char __user *buf, long count,
  	smp_store_release(&line6->buffer_circular.tail,
  				(tail + 1) & (LINE6_MESSAGE_MAXCOUNT - 1));
  

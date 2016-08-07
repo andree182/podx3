@@ -1,4 +1,4 @@
-From 4e827d12138a2c4bcefe7a5e935897c40047ada4 Mon Sep 17 00:00:00 2001
+From 5bf5154bd9710bbf36357d041ae69deb3072c8c2 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 22:12:03 +0100
 Subject: [PATCH 04/14] ALSA: line6: Add support for POD X3

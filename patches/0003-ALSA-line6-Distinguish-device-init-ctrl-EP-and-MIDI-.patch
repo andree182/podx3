@@ -1,4 +1,4 @@
-From 7bbd8a408e6584b0509fda0b0994a71f6492a4a2 Mon Sep 17 00:00:00 2001
+From 70e266ab50dfda25af8370d35be0f37cd6083c7a Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 22:03:15 +0100
 Subject: [PATCH 03/14] ALSA: line6: Distinguish device init (ctrl EP) and MIDI
