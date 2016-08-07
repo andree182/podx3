@@ -9,7 +9,6 @@ the right format (CSV from USBlyzer):
 """
 
 import sys, time, math, array, struct, string
-import usb.util, usb.core
 import struct
 import threading
 import signal

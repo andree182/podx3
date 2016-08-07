@@ -25,7 +25,6 @@ USAGE:
 """
 
 import sys, time, math, array, struct, string
-import usb.util, usb.core
 import struct
 import threading
 import signal
@@ -68,6 +67,7 @@ class POD:
               # traceback.print_exc()
               pass
       
+      import usb.util, usb.core
       self.device = usb.core.find(idVendor = POD.VENDOR_ID, idProduct = POD.PRODUCT_ID)
       if self.device.is_kernel_driver_active(0):
           try:
