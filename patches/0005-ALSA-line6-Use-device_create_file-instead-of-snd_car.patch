@@ -1,7 +1,7 @@
-From 59b4236376cf6686cf112459c6db2f4a9ae59c03 Mon Sep 17 00:00:00 2001
+From ec71d34e4243f41ad552a7608bf093d3c517972d Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 22 Nov 2015 16:51:45 +0100
-Subject: [PATCH 05/14] ALSA: line6: Use device_create_file instead of
+Subject: [PATCH 05/15] ALSA: line6: Use device_create_file instead of
  snd_card_add_dev_attr
 
 The latter seems to create invalid configuration, the device pointer passed to the attr

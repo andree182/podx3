@@ -1,7 +1,7 @@
-From 70e266ab50dfda25af8370d35be0f37cd6083c7a Mon Sep 17 00:00:00 2001
+From 69ea527050ad7e64fcc09ac3a9d28bb1567c2e47 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 22:03:15 +0100
-Subject: [PATCH 03/14] ALSA: line6: Distinguish device init (ctrl EP) and MIDI
+Subject: [PATCH 03/15] ALSA: line6: Distinguish device init (ctrl EP) and MIDI
  data transfer (int EP)
 
 POD X3 can initialize similarly to older PODs, but it doesn't have the MIDI interface. Instead,

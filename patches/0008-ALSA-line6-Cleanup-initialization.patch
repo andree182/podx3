@@ -1,7 +1,7 @@
-From a73a5c19208ed1096eb63a078672892daa1894cf Mon Sep 17 00:00:00 2001
+From 8ee964d828bda6e8b16430fac38ad926f7796e0a Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 28 Nov 2015 18:04:19 +0100
-Subject: [PATCH 08/14] ALSA: line6: Cleanup initialization
+Subject: [PATCH 08/15] ALSA: line6: Cleanup initialization
 
 Only determine control port properties if the devices needs it.
 Only initialize PCM for POD HD devices that support it.

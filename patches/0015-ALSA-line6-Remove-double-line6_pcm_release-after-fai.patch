@@ -1,0 +1,28 @@
+From 93ecf23ce6fa442b36a3bb9c18983a60fbb2e52a Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Mon, 8 Aug 2016 21:52:21 +0200
+Subject: [PATCH 15/15] ALSA: line6: Remove double line6_pcm_release() after
+ failed acquire.
+
+If there's an error, pcm is released in line6_pcm_acquire already.
+
+Signed-off-by: Andrej Krutak <dev@andree.sk>
+---
+ sound/usb/line6/pcm.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/sound/usb/line6/pcm.c b/sound/usb/line6/pcm.c
+index 5aa89d2..cd0e337 100644
+--- a/sound/usb/line6/pcm.c
++++ b/sound/usb/line6/pcm.c
+@@ -55,7 +55,6 @@ static int snd_line6_impulse_volume_put(struct snd_kcontrol *kcontrol,
+ 		err = line6_pcm_acquire(line6pcm, LINE6_STREAM_IMPULSE, true);
+ 		if (err < 0) {
+ 			line6pcm->impulse_volume = 0;
+-			line6_pcm_release(line6pcm, LINE6_STREAM_IMPULSE);
+ 			return err;
+ 		}
+ 	} else {
+-- 
+1.9.1
+

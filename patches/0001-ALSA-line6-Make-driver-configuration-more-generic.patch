@@ -1,7 +1,7 @@
 From dcd2fc1f6f0919977527f7fbfb9ecd1e80b3241c Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 21:44:33 +0100
-Subject: [PATCH 01/14] ALSA: line6: Make driver configuration more generic.
+Subject: [PATCH 01/15] ALSA: line6: Make driver configuration more generic.
 
 The main reasons are different settings for USB low/high speed and possible different channel
 counts for in/out; required by POD X3.

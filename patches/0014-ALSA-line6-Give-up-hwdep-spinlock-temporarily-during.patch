@@ -1,7 +1,7 @@
-From ecc52e79033b179bfc578c6175e7e12cdcd70a8b Mon Sep 17 00:00:00 2001
+From 6162398e47ea18225ddc8189301c8cdb07986fbe Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 7 Aug 2016 21:10:35 +0200
-Subject: [PATCH 14/14] ALSA: line6: Give up hwdep spinlock temporarily during
+Subject: [PATCH 14/15] ALSA: line6: Give up hwdep spinlock temporarily during
  read operation
 
 Without it, the code hits the 'might_sleep while atomic' debug warning.

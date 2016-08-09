@@ -1,7 +1,7 @@
-From 79fcfd60a5ecefeaae05a1973836764972d15a41 Mon Sep 17 00:00:00 2001
+From 21ee6f7dd650734072246a35bd050b7823916d40 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Tue, 1 Dec 2015 21:28:26 +0100
-Subject: [PATCH 10/14] ALSA: line6: Add proper locks for hwdep
+Subject: [PATCH 10/15] ALSA: line6: Add proper locks for hwdep
  open/release/read
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>

@@ -1,7 +1,7 @@
-From 53093749d79ff60bb5d253729d672caa13760bd7 Mon Sep 17 00:00:00 2001
+From 708c37eb173b0fec62a499ade11102e921483237 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 22 Nov 2015 20:56:31 +0100
-Subject: [PATCH 07/14] ALSA: line6: Allow processing of raw incoming messages
+Subject: [PATCH 07/15] ALSA: line6: Allow processing of raw incoming messages
 
 Not all PODs use MIDI via USB data interface, thus allow avoiding that code and
 instead using direct processing.

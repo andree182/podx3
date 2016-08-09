@@ -1,7 +1,7 @@
-From 5bf5154bd9710bbf36357d041ae69deb3072c8c2 Mon Sep 17 00:00:00 2001
+From c88367ede367e87da414caf3ccde06c7d8976486 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 22:12:03 +0100
-Subject: [PATCH 04/14] ALSA: line6: Add support for POD X3
+Subject: [PATCH 04/15] ALSA: line6: Add support for POD X3
 
 This includes audio in/out and basic initialization via control EP (emulates what original driver does).
 The initialization is done similarly to original POD, firmware and serial IDs are read and exported via sysfs.

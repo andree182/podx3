@@ -1,7 +1,7 @@
-From b37be741da6b4de71b154a783252fa763f2feb12 Mon Sep 17 00:00:00 2001
+From a2a1e82a420837059343f2c60449bf64c1d5e2d8 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Thu, 7 May 2015 21:48:55 +0200
-Subject: [PATCH 06/14] ALSA: line6: Allow bulk endpoints instead of interrupt
+Subject: [PATCH 06/15] ALSA: line6: Allow bulk endpoints instead of interrupt
  endpoints
 
 Some PODs (e.g. POD X3) have bulk instead of interrupt endpoints for data transfer.

@@ -1,7 +1,7 @@
-From 7db6a9349b5404ec5269cd9fe0cdef1e1a15c45f Mon Sep 17 00:00:00 2001
+From afc447187255eb2a9f6712eedeec8c400a1df471 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 12 Jun 2016 21:55:11 +0200
-Subject: [PATCH 11/14] ALSA: line6: Only free buffer if it is set.
+Subject: [PATCH 11/15] ALSA: line6: Only free buffer if it is set.
 
 This makes the resource freeing not dependent on the existence of private data
 from the podhd module, which may be gone during the call.
