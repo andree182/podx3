@@ -1,10 +1,10 @@
-From 708c37eb173b0fec62a499ade11102e921483237 Mon Sep 17 00:00:00 2001
+From 35745cb12d4deabd74cd72bf1ba6246deb3d3295 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 22 Nov 2015 20:56:31 +0100
 Subject: [PATCH 07/15] ALSA: line6: Allow processing of raw incoming messages
 
-Not all PODs use MIDI via USB data interface, thus allow avoiding that code and
-instead using direct processing.
+Not all PODs use MIDI via USB data interface, thus allow avoiding
+that code and instead using direct processing.
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
@@ -14,7 +14,7 @@ Signed-off-by: Andrej Krutak <dev@andree.sk>
  3 files changed, 40 insertions(+), 29 deletions(-)
 
 diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
-index 9b16777..877bc34 100644
+index 9b16777..853a143 100644
 --- a/sound/usb/line6/driver.c
 +++ b/sound/usb/line6/driver.c
 @@ -290,26 +290,31 @@ static void line6_data_received(struct urb *urb)
@@ -69,9 +69,9 @@ index 9b16777..877bc34 100644
  
  	/* free buffer memory first: */
 -	kfree(line6->buffer_message);
-+	if (line6->properties->capabilities & LINE6_CAP_CONTROL_MIDI) {
++	if (line6->properties->capabilities & LINE6_CAP_CONTROL_MIDI)
 +		kfree(line6->buffer_message);
-+	}
++
  	kfree(line6->buffer_listen);
  
  	/* then free URBs: */

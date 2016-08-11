@@ -1,14 +1,14 @@
-From 980305f66affcf6ef2da8fd35883dc442ea0848a Mon Sep 17 00:00:00 2001
+From 97e1b926ab7f0a86aec2f8c8bd4e29fec55a6f70 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 29 Nov 2015 22:16:50 +0100
 Subject: [PATCH 09/15] ALSA: line6: Add hwdep interface to access the POD
  control messages
 
-We must do it this way, because e.g. POD X3 won't play any sound unless the host
-listens on the bulk EP, so we cannot export it only via libusb.
+We must do it this way, because e.g. POD X3 won't play any sound unless
+the host listens on the bulk EP, so we cannot export it only via libusb.
 
-The driver currently doesn't use the bulk EP messages in other way, in future it could
-e.g. sense/modify volume(s).
+The driver currently doesn't use the bulk EP messages in other way,
+in future it could e.g. sense/modify volume(s).
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
@@ -34,7 +34,7 @@ index a45be6b..7612cae 100644
  
  struct snd_hwdep_info {
 diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
-index c8aee03..9bae3a3 100644
+index 8a71d45..0a0e324 100644
 --- a/sound/usb/line6/driver.c
 +++ b/sound/usb/line6/driver.c
 @@ -14,9 +14,11 @@
@@ -67,7 +67,7 @@ index c8aee03..9bae3a3 100644
  
 +
 +/* Enable buffering of incoming messages, flush the buffer */
-+static int line6_hwdep_open(struct snd_hwdep *hw, struct file * file)
++static int line6_hwdep_open(struct snd_hwdep *hw, struct file *file)
 +{
 +	struct usb_line6 *line6 = hw->private_data;
 +
@@ -99,7 +99,7 @@ index c8aee03..9bae3a3 100644
 +}
 +
 +/* Stop buffering */
-+static int line6_hwdep_release(struct snd_hwdep *hw, struct file * file)
++static int line6_hwdep_release(struct snd_hwdep *hw, struct file *file)
 +{
 +	struct usb_line6 *line6 = hw->private_data;
 +

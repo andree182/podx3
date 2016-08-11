@@ -1,4 +1,4 @@
-From 6162398e47ea18225ddc8189301c8cdb07986fbe Mon Sep 17 00:00:00 2001
+From 1861b8181642014882e1ebb44b4816b1e83aca03 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 7 Aug 2016 21:10:35 +0200
 Subject: [PATCH 14/15] ALSA: line6: Give up hwdep spinlock temporarily during
@@ -12,7 +12,7 @@ Signed-off-by: Andrej Krutak <dev@andree.sk>
  1 file changed, 5 insertions(+)
 
 diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
-index 56fb704..89a9181 100644
+index 142e0e3..286b6e1 100644
 --- a/sound/usb/line6/driver.c
 +++ b/sound/usb/line6/driver.c
 @@ -600,6 +600,10 @@ line6_hwdep_read(struct snd_hwdep *hwdep, char __user *buf, long count,

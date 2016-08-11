@@ -1,40 +1,44 @@
-From dcd2fc1f6f0919977527f7fbfb9ecd1e80b3241c Mon Sep 17 00:00:00 2001
+From 2e7fa9ec24c514754dc965aa46a5ccfd2295c9ff Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 21:44:33 +0100
 Subject: [PATCH 01/15] ALSA: line6: Make driver configuration more generic.
 
-The main reasons are different settings for USB low/high speed and possible different channel
-counts for in/out; required by POD X3.
+The main reasons are different settings for USB low/high speed and possible
+different channel counts for in/out; required by POD X3.
 
 This includes:
-* iso_buffers (count of iso buffers depends on USB speed, 2 is not enough for high speed)
+* iso_buffers (count of iso buffers depends on USB speed, 2 is not enough
+  for high speed)
 * bytes_per_frame -> bytes_per_channel
 * max_packet_size -> max_packet_size_in/out
-* USB_INTERVALS_PER_SECOND -> LOW/HIGH settings (high needs 8000, instead of 1000)
+* USB_INTERVALS_PER_SECOND -> LOW/HIGH settings
+  (high needs 8000, instead of 1000)
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
- sound/usb/line6/capture.c  | 42 +++++++++++++++++++++++++++++-------------
+ sound/usb/line6/capture.c  | 44 ++++++++++++++++++++++++++++++--------------
  sound/usb/line6/driver.c   | 15 ++++++++++-----
  sound/usb/line6/driver.h   | 42 ++++++++++++++++++++++++++----------------
  sound/usb/line6/pcm.c      | 43 +++++++++++++++++++++++++------------------
  sound/usb/line6/pcm.h      | 15 +++++++--------
- sound/usb/line6/playback.c | 36 +++++++++++++++++++++++++-----------
+ sound/usb/line6/playback.c | 37 +++++++++++++++++++++++++------------
  sound/usb/line6/pod.c      |  3 +--
  sound/usb/line6/podhd.c    |  4 +---
  sound/usb/line6/toneport.c |  2 +-
- 9 files changed, 125 insertions(+), 77 deletions(-)
+ 9 files changed, 126 insertions(+), 79 deletions(-)
 
 diff --git a/sound/usb/line6/capture.c b/sound/usb/line6/capture.c
-index f518fbb..dfa03c6 100644
+index f518fbb..bacf03f 100644
 --- a/sound/usb/line6/capture.c
 +++ b/sound/usb/line6/capture.c
-@@ -30,9 +30,9 @@ static int submit_audio_in_urb(struct snd_line6_pcm *line6pcm)
+@@ -29,10 +29,10 @@ static int submit_audio_in_urb(struct snd_line6_pcm *line6pcm)
+ 	int ret;
  	struct urb *urb_in;
  
- 	index =
+-	index =
 -	    find_first_zero_bit(&line6pcm->in.active_urbs, LINE6_ISO_BUFFERS);
-+	    find_first_zero_bit(&line6pcm->in.active_urbs, line6pcm->line6->iso_buffers);
++	index = find_first_zero_bit(
++		&line6pcm->in.active_urbs, line6pcm->line6->iso_buffers);
  
 -	if (index < 0 || index >= LINE6_ISO_BUFFERS) {
 +	if (index < 0 || index >= line6pcm->line6->iso_buffers) {
@@ -122,8 +126,8 @@ index f518fbb..dfa03c6 100644
  	struct usb_line6 *line6 = line6pcm->line6;
  	int i;
  
-+	line6pcm->in.urbs = (struct urb**)kzalloc(
-+		sizeof(struct urb*) * line6->iso_buffers, GFP_KERNEL);
++	line6pcm->in.urbs = kzalloc(
++		sizeof(struct urb *) * line6->iso_buffers, GFP_KERNEL);
 +	if (line6pcm->in.urbs == NULL)
 +		return -ENOMEM;
 +
@@ -421,10 +425,10 @@ index 508410a..58d36f9 100644
  	/* PCM playback volume (left and right) */
  	int volume_playback[2];
 diff --git a/sound/usb/line6/playback.c b/sound/usb/line6/playback.c
-index 97ed593..8bfdda4 100644
+index 97ed593..4833c51 100644
 --- a/sound/usb/line6/playback.c
 +++ b/sound/usb/line6/playback.c
-@@ -146,18 +146,21 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
+@@ -146,18 +146,20 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
  	int index;
  	int i, urb_size, urb_frames;
  	int ret;
@@ -440,17 +444,17 @@ index 97ed593..8bfdda4 100644
 +		(line6pcm->line6->intervals_per_second / LINE6_ISO_INTERVAL);
  	struct urb *urb_out;
  
- 	index =
+-	index =
 -	    find_first_zero_bit(&line6pcm->out.active_urbs, LINE6_ISO_BUFFERS);
-+	    find_first_zero_bit(&line6pcm->out.active_urbs,
-+	                        line6pcm->line6->iso_buffers);
++	index = find_first_zero_bit(
++		&line6pcm->out.active_urbs, line6pcm->line6->iso_buffers);
  
 -	if (index < 0 || index >= LINE6_ISO_BUFFERS) {
 +	if (index < 0 || index >= line6pcm->line6->iso_buffers) {
  		dev_err(line6pcm->line6->ifcdev, "no free URB found\n");
  		return -EINVAL;
  	}
-@@ -165,6 +168,7 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
+@@ -165,6 +167,7 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
  	urb_out = line6pcm->out.urbs[index];
  	urb_size = 0;
  
@@ -458,7 +462,7 @@ index 97ed593..8bfdda4 100644
  	for (i = 0; i < LINE6_ISO_PACKETS; ++i) {
  		/* compute frame size for given sampling rate */
  		int fsize = 0;
-@@ -178,9 +182,11 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
+@@ -178,9 +181,11 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
  			line6pcm->out.count += frame_increment;
  			n = line6pcm->out.count / frame_factor;
  			line6pcm->out.count -= n * frame_factor;
@@ -471,7 +475,7 @@ index 97ed593..8bfdda4 100644
  		fout->offset = urb_size;
  		fout->length = fsize;
  		urb_size += fsize;
-@@ -195,7 +201,7 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
+@@ -195,7 +200,7 @@ static int submit_audio_out_urb(struct snd_line6_pcm *line6pcm)
  	urb_frames = urb_size / bytes_per_frame;
  	urb_out->transfer_buffer =
  	    line6pcm->out.buffer +
@@ -480,7 +484,7 @@ index 97ed593..8bfdda4 100644
  	urb_out->transfer_buffer_length = urb_size;
  	urb_out->context = line6pcm;
  
-@@ -286,7 +292,7 @@ int line6_submit_audio_out_all_urbs(struct snd_line6_pcm *line6pcm)
+@@ -286,7 +291,7 @@ int line6_submit_audio_out_all_urbs(struct snd_line6_pcm *line6pcm)
  {
  	int ret = 0, i;
  
@@ -489,7 +493,7 @@ index 97ed593..8bfdda4 100644
  		ret = submit_audio_out_urb(line6pcm);
  		if (ret < 0)
  			break;
-@@ -305,6 +311,9 @@ static void audio_out_callback(struct urb *urb)
+@@ -305,6 +310,9 @@ static void audio_out_callback(struct urb *urb)
  	struct snd_line6_pcm *line6pcm = (struct snd_line6_pcm *)urb->context;
  	struct snd_pcm_substream *substream =
  	    get_substream(line6pcm, SNDRV_PCM_STREAM_PLAYBACK);
@@ -499,7 +503,7 @@ index 97ed593..8bfdda4 100644
  
  #if USE_CLEAR_BUFFER_WORKAROUND
  	memset(urb->transfer_buffer, 0, urb->transfer_buffer_length);
-@@ -313,11 +322,11 @@ static void audio_out_callback(struct urb *urb)
+@@ -313,11 +321,11 @@ static void audio_out_callback(struct urb *urb)
  	line6pcm->out.last_frame = urb->start_frame;
  
  	/* find index of URB */
@@ -513,7 +517,7 @@ index 97ed593..8bfdda4 100644
  		return;		/* URB has been unlinked asynchronously */
  
  	for (i = 0; i < LINE6_ISO_PACKETS; i++)
-@@ -329,7 +338,7 @@ static void audio_out_callback(struct urb *urb)
+@@ -329,7 +337,7 @@ static void audio_out_callback(struct urb *urb)
  		struct snd_pcm_runtime *runtime = substream->runtime;
  
  		line6pcm->out.pos_done +=
@@ -522,12 +526,12 @@ index 97ed593..8bfdda4 100644
  
  		if (line6pcm->out.pos_done >= runtime->buffer_size)
  			line6pcm->out.pos_done -= runtime->buffer_size;
-@@ -401,8 +410,13 @@ int line6_create_audio_out_urbs(struct snd_line6_pcm *line6pcm)
+@@ -401,8 +409,13 @@ int line6_create_audio_out_urbs(struct snd_line6_pcm *line6pcm)
  	struct usb_line6 *line6 = line6pcm->line6;
  	int i;
  
-+	line6pcm->out.urbs = (struct urb**)kzalloc(
-+		sizeof(struct urb*) * line6->iso_buffers, GFP_KERNEL);
++	line6pcm->out.urbs = kzalloc(
++		sizeof(struct urb *) * line6->iso_buffers, GFP_KERNEL);
 +	if (line6pcm->out.urbs == NULL)
 +		return -ENOMEM;
 +

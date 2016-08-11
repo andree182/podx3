@@ -1,6 +1,6 @@
-From afc447187255eb2a9f6712eedeec8c400a1df471 Mon Sep 17 00:00:00 2001
+From bd476702456b66747322afb1166b5c95cdfb40c9 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
-Date: Sun, 12 Jun 2016 21:55:11 +0200
+Date: Thu, 11 Aug 2016 11:32:19 +0200
 Subject: [PATCH 11/15] ALSA: line6: Only free buffer if it is set.
 
 This makes the resource freeing not dependent on the existence of private data
@@ -12,17 +12,17 @@ Signed-off-by: Andrej Krutak <dev@andree.sk>
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
-index 7f5e3a3..56fb704 100644
+index 344465f..142e0e3 100644
 --- a/sound/usb/line6/driver.c
 +++ b/sound/usb/line6/driver.c
 @@ -479,13 +479,14 @@ static void line6_destruct(struct snd_card *card)
  	struct usb_device *usbdev = line6->usbdev;
  
  	/* free buffer memory first: */
--	if (line6->properties->capabilities & LINE6_CAP_CONTROL_MIDI) {
-+	if (line6->buffer_message) {
+-	if (line6->properties->capabilities & LINE6_CAP_CONTROL_MIDI)
++	if (line6->buffer_message)
  		kfree(line6->buffer_message);
- 	}
+ 
  	kfree(line6->buffer_listen);
  
  	/* then free URBs: */

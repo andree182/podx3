@@ -1,16 +1,17 @@
-From c88367ede367e87da414caf3ccde06c7d8976486 Mon Sep 17 00:00:00 2001
+From fa8039e21677fb03e849b276bdfa3187cd75e05e Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 22:12:03 +0100
 Subject: [PATCH 04/15] ALSA: line6: Add support for POD X3
 
-This includes audio in/out and basic initialization via control EP (emulates what original driver does).
-The initialization is done similarly to original POD, firmware and serial IDs are read and exported via sysfs.
+This includes audio in/out and basic initialization via control EP (emulates
+what original driver does). The initialization is done similarly to original
+POD, firmware and serial IDs are read and exported via sysfs.
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
  sound/usb/line6/Kconfig |   4 +-
- sound/usb/line6/podhd.c | 274 +++++++++++++++++++++++++++++++++++++++++++++---
- 2 files changed, 263 insertions(+), 15 deletions(-)
+ sound/usb/line6/podhd.c | 276 +++++++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 265 insertions(+), 15 deletions(-)
 
 diff --git a/sound/usb/line6/Kconfig b/sound/usb/line6/Kconfig
 index f4585d37..8ffcf48 100644
@@ -30,7 +31,7 @@ index f4585d37..8ffcf48 100644
  config SND_USB_TONEPORT
  	tristate "TonePort GX, UX1 and UX2 USB support"
 diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
-index 4fc4789..d698344 100644
+index 4fc4789..42fa376 100644
 --- a/sound/usb/line6/podhd.c
 +++ b/sound/usb/line6/podhd.c
 @@ -2,6 +2,7 @@
@@ -86,14 +87,14 @@ index 4fc4789..d698344 100644
  };
  
  static struct snd_ratden podhd_ratden = {
-@@ -71,16 +105,211 @@ static struct line6_pcm_properties podhd_pcm_properties = {
+@@ -71,9 +105,196 @@ static struct line6_pcm_properties podhd_pcm_properties = {
  	.rates = {
  			    .nrats = 1,
  			    .rats = &podhd_ratden},
 -	.bytes_per_channel = 3 /* 24bit audio (stereo) */
 +	.bytes_per_channel = 3 /* SNDRV_PCM_FMTBIT_S24_3LE */
-+};
-+
+ };
+ 
 +static struct line6_pcm_properties podx3_pcm_properties = {
 +	.playback_hw = {
 +				  .info = (SNDRV_PCM_INFO_MMAP |
@@ -123,7 +124,8 @@ index 4fc4789..d698344 100644
 +				 .rates = SNDRV_PCM_RATE_48000,
 +				 .rate_min = 48000,
 +				 .rate_max = 48000,
-+				 /* 1+2: Main signal (out), 3+4: Tone 1, 5+6: Tone 2, 7+8: raw */
++				 /* 1+2: Main signal (out), 3+4: Tone 1,
++				  * 5+6: Tone 2, 7+8: raw */
 +				 .channels_min = 8,
 +				 .channels_max = 8,
 +				 .buffer_bytes_max = 60000,
@@ -171,9 +173,9 @@ index 4fc4789..d698344 100644
 +static const struct attribute_group podhd_dev_attr_group = {
 +	.name = "podhd",
 +	.attrs = podhd_dev_attrs,
- };
- 
- /*
++};
++
++/*
 + * POD X3 startup procedure.
 + *
 + * May be compatible with other POD HD's, since it's also similar to the
@@ -193,6 +195,7 @@ index 4fc4789..d698344 100644
 +static void podhd_startup_start_workqueue(unsigned long data)
 +{
 +	struct usb_line6_podhd *pod = (struct usb_line6_podhd *)data;
++
 +	CHECK_STARTUP_PROGRESS(pod->startup_progress,
 +		PODHD_STARTUP_SCHEDULE_WORKQUEUE);
 +
@@ -232,12 +235,12 @@ index 4fc4789..d698344 100644
 +
 +	for (i = 0; i <= 16; i++) {
 +		ret = line6_read_data(&pod->line6, 0xf000 + 0x08 * i, init_bytes, 8);
-+		if (ret < 0) {
++		if (ret < 0)
 +			return ret;
-+		}
 +	}
 +
-+	ret = usb_control_msg(usbdev, usb_sndctrlpipe(usbdev, 0), USB_REQ_SET_FEATURE,
++	ret = usb_control_msg(usbdev, usb_sndctrlpipe(usbdev, 0),
++					USB_REQ_SET_FEATURE,
 +					USB_TYPE_STANDARD | USB_RECIP_DEVICE | USB_DIR_OUT,
 +					1, 0,
 +					NULL, 0, LINE6_TIMEOUT * HZ);
@@ -279,10 +282,10 @@ index 4fc4789..d698344 100644
 +	}
 +}
 +
-+/*
+ /*
  	Try to init POD HD device.
  */
- static int podhd_init(struct usb_line6 *line6,
+@@ -81,6 +302,16 @@ static int podhd_init(struct usb_line6 *line6,
  		      const struct usb_device_id *id)
  {
  	int err;
@@ -299,7 +302,7 @@ index 4fc4789..d698344 100644
  
  	/* initialize MIDI subsystem: */
  	err = line6_init_midi(line6);
-@@ -88,12 +317,22 @@ static int podhd_init(struct usb_line6 *line6,
+@@ -88,12 +319,22 @@ static int podhd_init(struct usb_line6 *line6,
  		return err;
  
  	/* initialize PCM subsystem: */
@@ -315,17 +318,17 @@ index 4fc4789..d698344 100644
 +	if (!(pod->line6.properties->capabilities & LINE6_CAP_CONTROL)) {
 +		/* register USB audio system directly */
 +		return podhd_startup_finalize(pod);
-+	} else {
-+		/* init device and delay registering */
-+		init_timer(&pod->startup_timer);
-+		INIT_WORK(&pod->startup_work, podhd_startup_workqueue);
-+		podhd_startup(pod);
-+		return 0;
 +	}
++
++	/* init device and delay registering */
++	init_timer(&pod->startup_timer);
++	INIT_WORK(&pod->startup_work, podhd_startup_workqueue);
++	podhd_startup(pod);
++	return 0;
  }
  
  #define LINE6_DEVICE(prod) USB_DEVICE(0x0e41, prod)
-@@ -101,10 +340,12 @@ static int podhd_init(struct usb_line6 *line6,
+@@ -101,10 +342,12 @@ static int podhd_init(struct usb_line6 *line6,
  
  /* table of devices that work with this driver */
  static const struct usb_device_id podhd_id_table[] = {
@@ -338,7 +341,7 @@ index 4fc4789..d698344 100644
  	{}
  };
  
-@@ -114,8 +355,7 @@ static const struct line6_properties podhd_properties_table[] = {
+@@ -114,8 +357,7 @@ static const struct line6_properties podhd_properties_table[] = {
  	[LINE6_PODHD300] = {
  		.id = "PODHD300",
  		.name = "POD HD300",
@@ -348,7 +351,7 @@ index 4fc4789..d698344 100644
  				| LINE6_CAP_HWMON,
  		.altsetting = 5,
  		.ep_ctrl_r = 0x84,
-@@ -126,8 +366,7 @@ static const struct line6_properties podhd_properties_table[] = {
+@@ -126,8 +368,7 @@ static const struct line6_properties podhd_properties_table[] = {
  	[LINE6_PODHD400] = {
  		.id = "PODHD400",
  		.name = "POD HD400",
@@ -358,7 +361,7 @@ index 4fc4789..d698344 100644
  				| LINE6_CAP_HWMON,
  		.altsetting = 5,
  		.ep_ctrl_r = 0x84,
-@@ -138,8 +377,7 @@ static const struct line6_properties podhd_properties_table[] = {
+@@ -138,8 +379,7 @@ static const struct line6_properties podhd_properties_table[] = {
  	[LINE6_PODHD500_0] = {
  		.id = "PODHD500",
  		.name = "POD HD500",
@@ -368,7 +371,7 @@ index 4fc4789..d698344 100644
  				| LINE6_CAP_HWMON,
  		.altsetting = 1,
  		.ep_ctrl_r = 0x81,
-@@ -150,8 +388,7 @@ static const struct line6_properties podhd_properties_table[] = {
+@@ -150,8 +390,7 @@ static const struct line6_properties podhd_properties_table[] = {
  	[LINE6_PODHD500_1] = {
  		.id = "PODHD500",
  		.name = "POD HD500",
@@ -378,7 +381,7 @@ index 4fc4789..d698344 100644
  				| LINE6_CAP_HWMON,
  		.altsetting = 1,
  		.ep_ctrl_r = 0x81,
-@@ -159,6 +396,17 @@ static const struct line6_properties podhd_properties_table[] = {
+@@ -159,6 +398,17 @@ static const struct line6_properties podhd_properties_table[] = {
  		.ep_audio_r = 0x86,
  		.ep_audio_w = 0x02,
  	},
@@ -396,7 +399,7 @@ index 4fc4789..d698344 100644
  };
  
  /*
-@@ -169,7 +417,7 @@ static int podhd_probe(struct usb_interface *interface,
+@@ -169,7 +419,7 @@ static int podhd_probe(struct usb_interface *interface,
  {
  	return line6_probe(interface, id, "Line6-PODHD",
  			   &podhd_properties_table[id->driver_info],

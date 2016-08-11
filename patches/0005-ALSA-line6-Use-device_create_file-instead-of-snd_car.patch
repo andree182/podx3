@@ -1,19 +1,20 @@
-From ec71d34e4243f41ad552a7608bf093d3c517972d Mon Sep 17 00:00:00 2001
+From 2b1ac4169aad287100ed8a9414914b830407d328 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 22 Nov 2015 16:51:45 +0100
 Subject: [PATCH 05/15] ALSA: line6: Use device_create_file instead of
  snd_card_add_dev_attr
 
-The latter seems to create invalid configuration, the device pointer passed to the attr
-callbacks is not correct afterwards (results into segfaults when accessing the attributes).
+The latter seems to create invalid configuration, the device pointer passed
+to the attr callbacks is not correct afterwards (results into segfaults when
+accessing the attributes).
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
- sound/usb/line6/podhd.c | 59 +++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 43 insertions(+), 16 deletions(-)
+ sound/usb/line6/podhd.c | 60 ++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 44 insertions(+), 16 deletions(-)
 
 diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
-index d698344..7852b93 100644
+index 42fa376..f72803a 100644
 --- a/sound/usb/line6/podhd.c
 +++ b/sound/usb/line6/podhd.c
 @@ -57,6 +57,9 @@ struct usb_line6_podhd {
@@ -26,7 +27,7 @@ index d698344..7852b93 100644
  };
  
  static struct snd_ratden podhd_ratden = {
-@@ -176,16 +179,37 @@ static ssize_t firmware_version_show(struct device *dev,
+@@ -177,16 +180,37 @@ static ssize_t firmware_version_show(struct device *dev,
  static DEVICE_ATTR_RO(firmware_version);
  static DEVICE_ATTR_RO(serial_number);
  
@@ -73,13 +74,14 @@ index d698344..7852b93 100644
  
  /*
   * POD X3 startup procedure.
-@@ -279,6 +303,13 @@ static int podhd_startup_finalize(struct usb_line6_podhd *pod)
+@@ -281,6 +305,14 @@ static int podhd_startup_finalize(struct usb_line6_podhd *pod)
  {
  	struct usb_line6 *line6 = &pod->line6;
  
 +	if (pod->line6.properties->capabilities & LINE6_CAP_CONTROL) {
 +		/* create sysfs entries: */
 +		int err = podhd_create_attrs(line6->ifcdev);
++
 +		if (err < 0)
 +			return err;
 +	}
@@ -87,7 +89,7 @@ index d698344..7852b93 100644
  	/* ALSA audio interface: */
  	return snd_card_register(line6->card);
  }
-@@ -286,8 +317,11 @@ static int podhd_startup_finalize(struct usb_line6_podhd *pod)
+@@ -288,8 +320,11 @@ static int podhd_startup_finalize(struct usb_line6_podhd *pod)
  static void podhd_disconnect(struct usb_line6 *line6)
  {
  	struct usb_line6_podhd *pod = (struct usb_line6_podhd *)line6;
@@ -99,7 +101,7 @@ index d698344..7852b93 100644
  		del_timer_sync(&pod->startup_timer);
  		cancel_work_sync(&pod->startup_work);
  	}
-@@ -304,13 +338,6 @@ static int podhd_init(struct usb_line6 *line6,
+@@ -306,13 +341,6 @@ static int podhd_init(struct usb_line6 *line6,
  
  	line6->disconnect = podhd_disconnect;
  

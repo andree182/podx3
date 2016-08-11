@@ -1,4 +1,4 @@
-From 93ecf23ce6fa442b36a3bb9c18983a60fbb2e52a Mon Sep 17 00:00:00 2001
+From 151a368464749c80d20e87604c16c7c231c009e4 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Mon, 8 Aug 2016 21:52:21 +0200
 Subject: [PATCH 15/15] ALSA: line6: Remove double line6_pcm_release() after
@@ -12,7 +12,7 @@ Signed-off-by: Andrej Krutak <dev@andree.sk>
  1 file changed, 1 deletion(-)
 
 diff --git a/sound/usb/line6/pcm.c b/sound/usb/line6/pcm.c
-index 5aa89d2..cd0e337 100644
+index 13b3b27..455244c 100644
 --- a/sound/usb/line6/pcm.c
 +++ b/sound/usb/line6/pcm.c
 @@ -55,7 +55,6 @@ static int snd_line6_impulse_volume_put(struct snd_kcontrol *kcontrol,

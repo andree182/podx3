@@ -1,4 +1,4 @@
-From 8ee964d828bda6e8b16430fac38ad926f7796e0a Mon Sep 17 00:00:00 2001
+From e6b03887f65da61efd3bfcb8a2106609ad9e4e95 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 28 Nov 2015 18:04:19 +0100
 Subject: [PATCH 08/15] ALSA: line6: Cleanup initialization
@@ -14,7 +14,7 @@ Signed-off-by: Andrej Krutak <dev@andree.sk>
  2 files changed, 9 insertions(+), 13 deletions(-)
 
 diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
-index 877bc34..c8aee03 100644
+index 853a143..8a71d45 100644
 --- a/sound/usb/line6/driver.c
 +++ b/sound/usb/line6/driver.c
 @@ -612,9 +612,8 @@ int line6_probe(struct usb_interface *interface,
@@ -29,10 +29,10 @@ index 877bc34..c8aee03 100644
  		if (ret < 0)
  			goto error;
 diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
-index 7852b93..9d6c123 100644
+index f72803a..80ed138 100644
 --- a/sound/usb/line6/podhd.c
 +++ b/sound/usb/line6/podhd.c
-@@ -338,17 +338,14 @@ static int podhd_init(struct usb_line6 *line6,
+@@ -341,17 +341,14 @@ static int podhd_init(struct usb_line6 *line6,
  
  	line6->disconnect = podhd_disconnect;
  

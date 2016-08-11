@@ -1,23 +1,24 @@
-From 712adae150ef75afd8d72b78c705905c1260e00a Mon Sep 17 00:00:00 2001
+From e51b1f62fc1bf5f3e24ff4a4d284a30a71c0d9b7 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 21:56:00 +0100
-Subject: [PATCH 02/15] ALSA: line6: Add LINE6_CAP_IN_NEEDS_OUT, allowing void
+Subject: [PATCH 02/15] ALSA: line6: Add LINE6_CAP_IN_NEEDS_OUT, a void
  playback stream during capture
 
-E.g. POD X3 seems to require playback data to be sent to it to generate capture data.
-Otherwise the device stalls and doesn't send any more capture data until it's reset.
+E.g. POD X3 seems to require playback data to be sent to it to generate
+capture data. Otherwise the device stalls and doesn't send any more capture
+data until it's reset.
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
  sound/usb/line6/capture.c  |  5 +++++
  sound/usb/line6/driver.h   |  4 +++-
- sound/usb/line6/pcm.c      | 39 ++++++++++++++++++++++++++++++---------
- sound/usb/line6/pcm.h      |  3 ++-
+ sound/usb/line6/pcm.c      | 37 ++++++++++++++++++++++++++++---------
+ sound/usb/line6/pcm.h      |  4 +++-
  sound/usb/line6/toneport.c |  4 ++--
- 5 files changed, 42 insertions(+), 13 deletions(-)
+ 5 files changed, 41 insertions(+), 13 deletions(-)
 
 diff --git a/sound/usb/line6/capture.c b/sound/usb/line6/capture.c
-index dfa03c6..8d8ae80 100644
+index bacf03f..21a297e 100644
 --- a/sound/usb/line6/capture.c
 +++ b/sound/usb/line6/capture.c
 @@ -231,6 +231,8 @@ static int snd_line6_capture_open(struct snd_pcm_substream *substream)
@@ -56,7 +57,7 @@ index 24cd667..0f0c45a 100644
  
  /*
 diff --git a/sound/usb/line6/pcm.c b/sound/usb/line6/pcm.c
-index 210c85f..6067e04 100644
+index 210c85f..0af6d4e 100644
 --- a/sound/usb/line6/pcm.c
 +++ b/sound/usb/line6/pcm.c
 @@ -52,7 +52,7 @@ static int snd_line6_impulse_volume_put(struct snd_kcontrol *kcontrol,
@@ -68,15 +69,14 @@ index 210c85f..6067e04 100644
  		if (err < 0) {
  			line6pcm->impulse_volume = 0;
  			line6_pcm_release(line6pcm, LINE6_STREAM_IMPULSE);
-@@ -241,6 +241,16 @@ int snd_line6_trigger(struct snd_pcm_substream *substream, int cmd)
+@@ -241,6 +241,15 @@ int snd_line6_trigger(struct snd_pcm_substream *substream, int cmd)
  		switch (cmd) {
  		case SNDRV_PCM_TRIGGER_START:
  		case SNDRV_PCM_TRIGGER_RESUME:
 +			if ((s->stream == SNDRV_PCM_STREAM_CAPTURE) &&
 +				(line6pcm->line6->properties->capabilities &
 +					LINE6_CAP_IN_NEEDS_OUT)
-+			)
-+			{
++			) {
 +				err = line6_stream_start(line6pcm, SNDRV_PCM_STREAM_PLAYBACK,
 +						 LINE6_STREAM_CAPTURE_HELPER);
 +				if (err < 0)
@@ -85,22 +85,21 @@ index 210c85f..6067e04 100644
  			err = line6_stream_start(line6pcm, s->stream,
  						 LINE6_STREAM_PCM);
  			if (err < 0)
-@@ -249,6 +259,14 @@ int snd_line6_trigger(struct snd_pcm_substream *substream, int cmd)
+@@ -249,6 +258,13 @@ int snd_line6_trigger(struct snd_pcm_substream *substream, int cmd)
  
  		case SNDRV_PCM_TRIGGER_STOP:
  		case SNDRV_PCM_TRIGGER_SUSPEND:
 +			if ((s->stream == SNDRV_PCM_STREAM_CAPTURE) &&
 +				(line6pcm->line6->properties->capabilities &
 +					LINE6_CAP_IN_NEEDS_OUT)
-+			)
-+			{
++			) {
 +				line6_stream_stop(line6pcm, SNDRV_PCM_STREAM_PLAYBACK,
 +					  LINE6_STREAM_CAPTURE_HELPER);
 +			}
  			line6_stream_stop(line6pcm, s->stream,
  					  LINE6_STREAM_PCM);
  			break;
-@@ -282,27 +300,30 @@ snd_pcm_uframes_t snd_line6_pointer(struct snd_pcm_substream *substream)
+@@ -282,27 +298,30 @@ snd_pcm_uframes_t snd_line6_pointer(struct snd_pcm_substream *substream)
  	return pstr->pos_done;
  }
  
@@ -138,7 +137,7 @@ index 210c85f..6067e04 100644
  	}
   error:
  	mutex_unlock(&line6pcm->state_mutex);
-@@ -338,7 +359,7 @@ int snd_line6_hw_params(struct snd_pcm_substream *substream,
+@@ -338,7 +357,7 @@ int snd_line6_hw_params(struct snd_pcm_substream *substream,
  	struct line6_pcm_stream *pstr = get_stream(line6pcm, substream->stream);
  
  	mutex_lock(&line6pcm->state_mutex);
@@ -148,7 +147,7 @@ index 210c85f..6067e04 100644
  		goto error;
  
 diff --git a/sound/usb/line6/pcm.h b/sound/usb/line6/pcm.h
-index 58d36f9..790ee75 100644
+index 58d36f9..5f796ef8 100644
 --- a/sound/usb/line6/pcm.h
 +++ b/sound/usb/line6/pcm.h
 @@ -72,6 +72,7 @@ enum {
@@ -159,12 +158,13 @@ index 58d36f9..790ee75 100644
  };
  
  /* misc bit flags for PCM operation */
-@@ -190,7 +191,7 @@ extern int snd_line6_hw_params(struct snd_pcm_substream *substream,
+@@ -190,7 +191,8 @@ extern int snd_line6_hw_params(struct snd_pcm_substream *substream,
  extern int snd_line6_hw_free(struct snd_pcm_substream *substream);
  extern snd_pcm_uframes_t snd_line6_pointer(struct snd_pcm_substream *substream);
  extern void line6_pcm_disconnect(struct snd_line6_pcm *line6pcm);
 -extern int line6_pcm_acquire(struct snd_line6_pcm *line6pcm, int type);
-+extern int line6_pcm_acquire(struct snd_line6_pcm *line6pcm, int type, bool start);
++extern int line6_pcm_acquire(struct snd_line6_pcm *line6pcm, int type,
++			       bool start);
  extern void line6_pcm_release(struct snd_line6_pcm *line6pcm, int type);
  
  #endif

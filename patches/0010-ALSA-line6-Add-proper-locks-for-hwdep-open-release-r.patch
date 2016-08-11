@@ -1,4 +1,4 @@
-From 21ee6f7dd650734072246a35bd050b7823916d40 Mon Sep 17 00:00:00 2001
+From 59950d53db0a820da4b14fe0cad61c1fd348afea Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Tue, 1 Dec 2015 21:28:26 +0100
 Subject: [PATCH 10/15] ALSA: line6: Add proper locks for hwdep
@@ -11,10 +11,10 @@ Signed-off-by: Andrej Krutak <dev@andree.sk>
  2 files changed, 13 insertions(+), 6 deletions(-)
 
 diff --git a/sound/usb/line6/driver.c b/sound/usb/line6/driver.c
-index 9bae3a3..7f5e3a3 100644
+index 0a0e324..344465f 100644
 --- a/sound/usb/line6/driver.c
 +++ b/sound/usb/line6/driver.c
-@@ -541,8 +541,7 @@ static int line6_hwdep_open(struct snd_hwdep *hw, struct file * file)
+@@ -541,8 +541,7 @@ static int line6_hwdep_open(struct snd_hwdep *hw, struct file *file)
  	line6->buffer_circular.head = 0;
  	line6->buffer_circular.tail = 0;
  	sema_init(&line6->buffer_circular.sem, 0);
@@ -24,7 +24,7 @@ index 9bae3a3..7f5e3a3 100644
  
  	line6->buffer_circular.data =
  		kmalloc(LINE6_MESSAGE_MAXLEN * LINE6_MESSAGE_MAXCOUNT, GFP_KERNEL);
-@@ -567,7 +566,7 @@ static int line6_hwdep_release(struct snd_hwdep *hw, struct file * file)
+@@ -567,7 +566,7 @@ static int line6_hwdep_release(struct snd_hwdep *hw, struct file *file)
  
  	/* By this time, no readers are waiting, we can safely recreate the
  	 * semaphore at next open. */
