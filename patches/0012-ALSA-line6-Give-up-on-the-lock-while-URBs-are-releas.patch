@@ -1,4 +1,4 @@
-From cfe08db4eae78b19020d9c907591049559a58e20 Mon Sep 17 00:00:00 2001
+From 7250e7950544ec1f19d4f4ff50f647e24bf57f04 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 6 Aug 2016 14:30:22 +0200
 Subject: [PATCH 12/15] ALSA: line6: Give up on the lock while URBs are

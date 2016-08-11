@@ -1,4 +1,4 @@
-From e6b03887f65da61efd3bfcb8a2106609ad9e4e95 Mon Sep 17 00:00:00 2001
+From c946e8745b2eed34371c1d21dc43ef8d1a4e6077 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 28 Nov 2015 18:04:19 +0100
 Subject: [PATCH 08/15] ALSA: line6: Cleanup initialization

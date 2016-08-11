@@ -1,4 +1,4 @@
-From 2e7fa9ec24c514754dc965aa46a5ccfd2295c9ff Mon Sep 17 00:00:00 2001
+From 6b14e73576e7b861110c5d6a456be6529212df76 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 21:44:33 +0100
 Subject: [PATCH 01/15] ALSA: line6: Make driver configuration more generic.

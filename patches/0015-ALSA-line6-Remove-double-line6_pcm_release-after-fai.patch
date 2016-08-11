@@ -1,4 +1,4 @@
-From 151a368464749c80d20e87604c16c7c231c009e4 Mon Sep 17 00:00:00 2001
+From 28a395b800b9218fbf670d43c4b37f5862d50c03 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Mon, 8 Aug 2016 21:52:21 +0200
 Subject: [PATCH 15/15] ALSA: line6: Remove double line6_pcm_release() after

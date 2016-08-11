@@ -1,0 +1,69 @@
+From 28a395b800b9218fbf670d43c4b37f5862d50c03 Mon Sep 17 00:00:00 2001
+From: Andrej Krutak <dev@andree.sk>
+Date: Thu, 11 Aug 2016 15:52:42 +0200
+Subject: [PATCH 00/15] Line6 POD X3/X3Live suport
+
+Hello all,
+
+
+attached is the first version of the driver, based on POD HD. They share a lot
+of similarities, but at the same time there were some generalizations needed. I
+think POD HD could follow up on these patches to add hwdep support, perhaps
+helix too... I tried to not introduce regressions to the old HW.
+
+Anyhow, this is probably not the final version of the patches, as it is my
+first submission to upstream - I'm sure there will be some issues.
+Especially the patch
+"Use device_create_file instead of snd_card_add_dev_attr" I have to revisit,
+it may not be necessarry in the end.
+
+Other than that, the patches mostly pass `make checkpatches`. I've been
+testing the driver for a while now, including lock debugging options etc.,
+and there don't seem to be functional problems.
+
+There's one missing thing - the driver uses bulk USB interface of the
+device, but so far I wasn't able to make the usb_driver_claim_interface()
+work... I hope this can be added later, if someone (or I) finds time.
+
+
+Thanks for your inputs, greetings,
+
+
+Andrej Krutak (15):
+  ALSA: line6: Make driver configuration more generic.
+  ALSA: line6: Add LINE6_CAP_IN_NEEDS_OUT, a void playback stream during
+    capture
+  ALSA: line6: Distinguish device init (ctrl EP) and MIDI data transfer
+    (int EP)
+  ALSA: line6: Add support for POD X3
+  ALSA: line6: Use device_create_file instead of snd_card_add_dev_attr
+  ALSA: line6: Allow bulk endpoints instead of interrupt endpoints
+  ALSA: line6: Allow processing of raw incoming messages
+  ALSA: line6: Cleanup initialization
+  ALSA: line6: Add hwdep interface to access the POD control messages
+  ALSA: line6: Add proper locks for hwdep open/release/read
+  ALSA: line6: Only free buffer if it is set.
+  ALSA: line6: Give up on the lock while URBs are released.
+  ALSA: line6: Add support for POD X3 Live (only USB ID differs from POD
+    X3)
+  ALSA: line6: Give up hwdep spinlock temporarily during read operation
+  ALSA: line6: Remove double line6_pcm_release() after failed acquire.
+
+ include/uapi/sound/asound.h |   3 +-
+ sound/usb/line6/Kconfig     |   4 +-
+ sound/usb/line6/capture.c   |  49 +++++--
+ sound/usb/line6/driver.c    | 303 ++++++++++++++++++++++++++++++++++------
+ sound/usb/line6/driver.h    |  71 +++++++---
+ sound/usb/line6/midi.c      |   2 +-
+ sound/usb/line6/pcm.c       |  83 +++++++----
+ sound/usb/line6/pcm.h       |  19 +--
+ sound/usb/line6/playback.c  |  37 +++--
+ sound/usb/line6/pod.c       |  12 +-
+ sound/usb/line6/podhd.c     | 328 +++++++++++++++++++++++++++++++++++++++++---
+ sound/usb/line6/toneport.c  |   6 +-
+ sound/usb/line6/variax.c    |   6 +-
+ 13 files changed, 767 insertions(+), 156 deletions(-)
+
+-- 
+1.9.1
+

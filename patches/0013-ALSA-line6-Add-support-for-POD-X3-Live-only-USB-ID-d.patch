@@ -1,4 +1,4 @@
-From 6683ceafd325240ff3044fc9558c164046c85421 Mon Sep 17 00:00:00 2001
+From 72bdf13da686e40ee596fca3369e60ef13c9c8f3 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 12 Jun 2016 20:57:44 +0200
 Subject: [PATCH 13/15] ALSA: line6: Add support for POD X3 Live (only USB ID

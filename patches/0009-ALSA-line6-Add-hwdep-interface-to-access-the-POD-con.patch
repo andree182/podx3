@@ -1,4 +1,4 @@
-From 97e1b926ab7f0a86aec2f8c8bd4e29fec55a6f70 Mon Sep 17 00:00:00 2001
+From 7f3ba1daab5b09520795bbd3d6585298352c7603 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 29 Nov 2015 22:16:50 +0100
 Subject: [PATCH 09/15] ALSA: line6: Add hwdep interface to access the POD
@@ -18,17 +18,17 @@ Signed-off-by: Andrej Krutak <dev@andree.sk>
  3 files changed, 181 insertions(+), 1 deletion(-)
 
 diff --git a/include/uapi/sound/asound.h b/include/uapi/sound/asound.h
-index a45be6b..7612cae 100644
+index 609cadb..be353a7 100644
 --- a/include/uapi/sound/asound.h
 +++ b/include/uapi/sound/asound.h
-@@ -100,9 +100,10 @@ enum {
- 	SNDRV_HWDEP_IFACE_FW_FIREWORKS,	/* Echo Audio Fireworks based device */
- 	SNDRV_HWDEP_IFACE_FW_BEBOB,	/* BridgeCo BeBoB based device */
+@@ -106,9 +106,10 @@ enum {
  	SNDRV_HWDEP_IFACE_FW_OXFW,	/* Oxford OXFW970/971 based device */
+ 	SNDRV_HWDEP_IFACE_FW_DIGI00X,	/* Digidesign Digi 002/003 family */
+ 	SNDRV_HWDEP_IFACE_FW_TASCAM,	/* TASCAM FireWire series */
 +	SNDRV_HWDEP_IFACE_LINE6,	/* Line6 USB processors */
  
  	/* Don't forget to change the following: */
--	SNDRV_HWDEP_IFACE_LAST = SNDRV_HWDEP_IFACE_FW_OXFW
+-	SNDRV_HWDEP_IFACE_LAST = SNDRV_HWDEP_IFACE_FW_TASCAM
 +	SNDRV_HWDEP_IFACE_LAST = SNDRV_HWDEP_IFACE_LINE6
  };
  

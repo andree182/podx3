@@ -1,4 +1,4 @@
-From e51b1f62fc1bf5f3e24ff4a4d284a30a71c0d9b7 Mon Sep 17 00:00:00 2001
+From b69a33c43517a5ac1ff8ff3bca2be1a80f7e1d41 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 21:56:00 +0100
 Subject: [PATCH 02/15] ALSA: line6: Add LINE6_CAP_IN_NEEDS_OUT, a void
