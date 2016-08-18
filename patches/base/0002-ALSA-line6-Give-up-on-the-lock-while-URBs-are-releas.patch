@@ -1,8 +1,8 @@
-From 7250e7950544ec1f19d4f4ff50f647e24bf57f04 Mon Sep 17 00:00:00 2001
+From caf33fdaf7a0bf9b6b2d5e7d77466b9aa0e4bccf Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 6 Aug 2016 14:30:22 +0200
-Subject: [PATCH 12/15] ALSA: line6: Give up on the lock while URBs are
- released.
+Subject: [PATCH 2/3] ALSA: line6: Give up on the lock while URBs are released.
+To: tiwai@suse.com,perex@perex.cz,stefanha@gmail.com,grabner@icg.tugraz.at,alsa-devel@alsa-project.org
 
 Done, because line6_stream_stop() locks and calls line6_unlink_audio_urbs(),
 which in turn invokes audio_out_callback(), which tries to lock 2nd time.
@@ -67,10 +67,10 @@ Signed-off-by: Andrej Krutak <dev@andree.sk>
  1 file changed, 2 insertions(+)
 
 diff --git a/sound/usb/line6/pcm.c b/sound/usb/line6/pcm.c
-index 0af6d4e..13b3b27 100644
+index 2bc8879..41aa335 100644
 --- a/sound/usb/line6/pcm.c
 +++ b/sound/usb/line6/pcm.c
-@@ -216,7 +216,9 @@ static void line6_stream_stop(struct snd_line6_pcm *line6pcm, int direction,
+@@ -210,7 +210,9 @@ static void line6_stream_stop(struct snd_line6_pcm *line6pcm, int direction,
  	spin_lock_irqsave(&pstr->lock, flags);
  	clear_bit(type, &pstr->running);
  	if (!pstr->running) {

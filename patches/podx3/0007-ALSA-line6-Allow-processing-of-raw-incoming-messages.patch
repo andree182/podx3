@@ -1,7 +1,8 @@
-From 13e2a37b28ce6bd9caddbab3788e01ce93c2e01e Mon Sep 17 00:00:00 2001
+From 79e1e62cfa4f3a70e769c40fc44cfa03b727d756 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 22 Nov 2015 20:56:31 +0100
-Subject: [PATCH 07/15] ALSA: line6: Allow processing of raw incoming messages
+Subject: [PATCH v2 7/9] ALSA: line6: Allow processing of raw incoming messages
+To: tiwai@suse.com,perex@perex.cz,stefanha@gmail.com,grabner@icg.tugraz.at,alsa-devel@alsa-project.org
 
 Not all PODs use MIDI via USB data interface, thus allow avoiding
 that code and instead using direct processing.
@@ -135,10 +136,10 @@ index 9b16777..853a143 100644
  
  	snd_power_change_state(line6->card, SNDRV_CTL_POWER_D0);
 diff --git a/sound/usb/line6/driver.h b/sound/usb/line6/driver.h
-index 2551cb5..71ad299 100644
+index 7aeb6ad..14093c5 100644
 --- a/sound/usb/line6/driver.h
 +++ b/sound/usb/line6/driver.h
-@@ -146,15 +146,17 @@ struct usb_line6 {
+@@ -147,15 +147,17 @@ struct usb_line6 {
  	/* URB for listening to POD data endpoint */
  	struct urb *urb_listen;
  

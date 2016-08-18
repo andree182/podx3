@@ -1,7 +1,8 @@
-From c946e8745b2eed34371c1d21dc43ef8d1a4e6077 Mon Sep 17 00:00:00 2001
+From eb64c953cf7e697918bcf9089a97a161f956f43b Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
-Date: Sat, 28 Nov 2015 18:04:19 +0100
-Subject: [PATCH 08/15] ALSA: line6: Cleanup initialization
+Date: Fri, 12 Aug 2016 21:55:25 +0200
+Subject: [PATCH v2 8/9] ALSA: line6: Cleanup initialization
+To: tiwai@suse.com,perex@perex.cz,stefanha@gmail.com,grabner@icg.tugraz.at,alsa-devel@alsa-project.org
 
 Only determine control port properties if the devices needs it.
 Only initialize PCM for POD HD devices that support it.
@@ -29,12 +30,12 @@ index 853a143..8a71d45 100644
  		if (ret < 0)
  			goto error;
 diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
-index f72803a..80ed138 100644
+index 8246ea5..193eb29 100644
 --- a/sound/usb/line6/podhd.c
 +++ b/sound/usb/line6/podhd.c
-@@ -341,17 +341,14 @@ static int podhd_init(struct usb_line6 *line6,
- 
- 	line6->disconnect = podhd_disconnect;
+@@ -314,17 +314,14 @@ static int podhd_init(struct usb_line6 *line6,
+ 			return err;
+ 	}
  
 -	/* initialize MIDI subsystem: */
 -	err = line6_init_midi(line6);

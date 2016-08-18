@@ -1,7 +1,8 @@
-From 2f1c32a7a98843c5556c4dfcecdefcd573815ee9 Mon Sep 17 00:00:00 2001
+From 272c33266a16e11ef116883fbf18309bb2361c81 Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 22:12:03 +0100
-Subject: [PATCH 04/15] ALSA: line6: Add support for POD X3
+Subject: [PATCH v2 4/9] ALSA: line6: Add support for POD X3
+To: tiwai@suse.com,perex@perex.cz,stefanha@gmail.com,grabner@icg.tugraz.at,alsa-devel@alsa-project.org
 
 This includes audio in/out and basic initialization via control EP (emulates
 what original driver does). The initialization is done similarly to original
@@ -31,7 +32,7 @@ index f4585d37..8ffcf48 100644
  config SND_USB_TONEPORT
  	tristate "TonePort GX, UX1 and UX2 USB support"
 diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
-index 4fc4789..42fa376 100644
+index 4fc4789..8cf0a98 100644
 --- a/sound/usb/line6/podhd.c
 +++ b/sound/usb/line6/podhd.c
 @@ -2,6 +2,7 @@
@@ -146,8 +147,8 @@ index 4fc4789..42fa376 100644
 +static ssize_t serial_number_show(struct device *dev,
 +				  struct device_attribute *attr, char *buf)
 +{
-+	struct usb_interface *interface = to_usb_interface(dev);
-+	struct usb_line6_podhd *pod = usb_get_intfdata(interface);
++	struct snd_card *card = dev_to_snd_card(dev);
++	struct usb_line6_podhd *pod = card->private_data;
 +
 +	return sprintf(buf, "%u\n", pod->serial_number);
 +}
@@ -155,8 +156,8 @@ index 4fc4789..42fa376 100644
 +static ssize_t firmware_version_show(struct device *dev,
 +				     struct device_attribute *attr, char *buf)
 +{
-+	struct usb_interface *interface = to_usb_interface(dev);
-+	struct usb_line6_podhd *pod = usb_get_intfdata(interface);
++	struct snd_card *card = dev_to_snd_card(dev);
++	struct usb_line6_podhd *pod = card->private_data;
 +
 +	return sprintf(buf, "%06x\n", pod->firmware_version);
 +}

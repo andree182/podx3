@@ -1,8 +1,9 @@
-From 72bdf13da686e40ee596fca3369e60ef13c9c8f3 Mon Sep 17 00:00:00 2001
+From 941eadfeba5ae7dd143b2755d14b114c0f52ad2e Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sun, 12 Jun 2016 20:57:44 +0200
-Subject: [PATCH 13/15] ALSA: line6: Add support for POD X3 Live (only USB ID
+Subject: [PATCH v2 5/9] ALSA: line6: Add support for POD X3 Live (only USB ID
  differs from POD X3)
+To: tiwai@suse.com,perex@perex.cz,stefanha@gmail.com,grabner@icg.tugraz.at,alsa-devel@alsa-project.org
 
 Signed-off-by: Andrej Krutak <dev@andree.sk>
 ---
@@ -10,7 +11,7 @@ Signed-off-by: Andrej Krutak <dev@andree.sk>
  1 file changed, 13 insertions(+)
 
 diff --git a/sound/usb/line6/podhd.c b/sound/usb/line6/podhd.c
-index 80ed138..be764f8 100644
+index 8cf0a98..8246ea5 100644
 --- a/sound/usb/line6/podhd.c
 +++ b/sound/usb/line6/podhd.c
 @@ -37,6 +37,7 @@ enum {
@@ -21,7 +22,7 @@ index 80ed138..be764f8 100644
  };
  
  struct usb_line6_podhd {
-@@ -373,6 +374,7 @@ static const struct usb_device_id podhd_id_table[] = {
+@@ -348,6 +349,7 @@ static const struct usb_device_id podhd_id_table[] = {
  	{ LINE6_IF_NUM(0x414D, 0), .driver_info = LINE6_PODHD500_0 },
  	{ LINE6_IF_NUM(0x414D, 1), .driver_info = LINE6_PODHD500_1 },
  	{ LINE6_IF_NUM(0x414A, 0), .driver_info = LINE6_PODX3 },
@@ -29,7 +30,7 @@ index 80ed138..be764f8 100644
  	{}
  };
  
-@@ -434,6 +436,17 @@ static const struct line6_properties podhd_properties_table[] = {
+@@ -409,6 +411,17 @@ static const struct line6_properties podhd_properties_table[] = {
  		.ep_audio_r = 0x86,
  		.ep_audio_w = 0x02,
  	},

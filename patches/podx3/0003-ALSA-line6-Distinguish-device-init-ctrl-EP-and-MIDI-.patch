@@ -1,8 +1,9 @@
-From 8f918b1f8b6972ea441f47f18585959b5bd2b79e Mon Sep 17 00:00:00 2001
+From 9398660adb5d22eb9d97a5e5787274c1eb5a59ad Mon Sep 17 00:00:00 2001
 From: Andrej Krutak <dev@andree.sk>
 Date: Sat, 21 Nov 2015 22:03:15 +0100
-Subject: [PATCH 03/15] ALSA: line6: Distinguish device init (ctrl EP) and MIDI
+Subject: [PATCH v2 3/9] ALSA: line6: Distinguish device init (ctrl EP) and MIDI
  data transfer (int EP)
+To: tiwai@suse.com,perex@perex.cz,stefanha@gmail.com,grabner@icg.tugraz.at,alsa-devel@alsa-project.org
 
 POD X3 can initialize similarly to older PODs, but it doesn't have the MIDI
 interface. Instead, configuration is done via proprietary bulk EP messages.
@@ -58,7 +59,7 @@ index efeb16a8..5fd6cad 100644
  
  	snd_power_change_state(line6->card, SNDRV_CTL_POWER_D0);
 diff --git a/sound/usb/line6/driver.h b/sound/usb/line6/driver.h
-index 0f0c45a..2551cb5 100644
+index 69658dc..7aeb6ad 100644
 --- a/sound/usb/line6/driver.h
 +++ b/sound/usb/line6/driver.h
 @@ -102,6 +102,8 @@ enum {
@@ -70,7 +71,7 @@ index 0f0c45a..2551cb5 100644
  	/* device requires output data when input is read */
  	LINE6_CAP_IN_NEEDS_OUT = 1 << 4,
  };
-@@ -141,10 +143,10 @@ struct usb_line6 {
+@@ -142,10 +144,10 @@ struct usb_line6 {
  	/* Line 6 MIDI device data structure */
  	struct snd_line6_midi *line6midi;
  
@@ -84,7 +85,7 @@ index 0f0c45a..2551cb5 100644
  
  	/* Buffer for message to be processed */
 diff --git a/sound/usb/line6/pod.c b/sound/usb/line6/pod.c
-index 31e5864..78642e7 100644
+index 36e7274..17aa616 100644
 --- a/sound/usb/line6/pod.c
 +++ b/sound/usb/line6/pod.c
 @@ -475,6 +475,7 @@ static const struct line6_properties pod_properties_table[] = {
