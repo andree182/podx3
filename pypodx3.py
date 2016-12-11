@@ -153,7 +153,7 @@ class POD:
 
     def get_serial_number2(self):
         if self.useKernelDriver:
-            print("POD Serial: %s" % (file("/sys/class/sound/%s/device/device/serial_number" % (self.hwdepDevice)).read()))
+            print("POD Serial: %s" % (file("/sys/class/sound/%s/device/podhd/serial_number" % (self.hwdepDevice)).read()))
         else:
             d = self.readData(4, 0x80d0)
             print "POD Serial: %d" % (struct.unpack('<I', ''.join([chr(i) for i in d])))
